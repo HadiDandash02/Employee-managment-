@@ -2,11 +2,10 @@
 
 namespace Database\Factories;
 
-use App\Models\Employee;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<Employee>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Employee>
  */
 class EmployeeFactory extends Factory
 {
@@ -18,7 +17,12 @@ class EmployeeFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'first_name' => fake()->firstName(),
+            'last_name' => fake()->lastName(),
+            'email' => fake()->unique()->safeEmail(),
+            'department' => fake()->randomElement(['Engineering', 'Sales', 'Marketing', 'HR', 'Finance', 'Support']),
+            'salary' => fake()->randomFloat(2, 30000, 150000),
+            'date_of_birth' => fake()->dateTimeBetween('-60 years', '-20 years')->format('Y-m-d'),
         ];
     }
 }
