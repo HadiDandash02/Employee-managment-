@@ -3,59 +3,7 @@
 @section('title', 'Employees')
 
 @push('styles')
-    <link href="https://cdn.datatables.net/v/bs5/jszip-3.10.1/dt-2.1.8/b-3.2.0/b-colvis-3.2.0/b-html5-3.2.0/b-print-3.2.0/r-3.0.3/datatables.min.css" rel="stylesheet">
-    <style>
-        /* Toolbar above / footer below the table */
-        .table-panel .dt-container > .row { margin: 0 !important; padding: 1rem 1.1rem; row-gap: .6rem; }
-        .table-panel .dt-container > .row > * { padding: 0; }
-        .table-panel .dt-container > .row > * > * + * { margin-left: .6rem; }
-        .table-panel .dt-container > .row.dt-layout-table { padding: 0 1.1rem; }
-        .table-panel .dt-search input { min-width: 16rem; margin-left: 0 !important; }
-        .table-panel .dt-length select { min-width: 4.5rem; }
-        .table-panel .dt-buttons { gap: .5rem; display: inline-flex; }
-        .table-panel .dt-buttons .btn { border-radius: .45rem !important; }
-        .table-panel .dt-button-collection .dropdown-menu, .table-panel div.dt-button-collection {
-            border: 1px solid #e3e8e8; border-radius: .5rem; box-shadow: 0 8px 24px rgba(16, 24, 40, .12); padding: .35rem 0; min-width: 9rem;
-        }
-        .table-panel div.dt-button-collection .dropdown-item { font-size: .8rem; font-weight: 500; padding: .45rem 1rem; }
-        .table-panel .dt-info { font-size: .8rem; color: #6b7280; }
-        .table-panel .dt-paging .pagination { margin: 0; }
-        .table-panel div.dt-processing { z-index: 10; }
-
-        /* Teal header like the NCN system */
-        table.ncn-table { margin: 0 !important; font-size: .8rem; }
-        table.ncn-table thead th {
-            --bs-table-bg: var(--brand); --bs-table-color: #fff;
-            background-color: var(--brand) !important; color: #fff !important; font-weight: 700; font-size: .78rem; white-space: nowrap;
-            border: 0; border-right: 1px solid rgba(255, 255, 255, .18); padding: .85rem .75rem; vertical-align: middle;
-        }
-        table.ncn-table thead th:last-child { border-right: 0; }
-        table.ncn-table thead th:first-child { border-top-left-radius: .35rem; }
-        table.ncn-table thead th:last-child { border-top-right-radius: .35rem; }
-        table.ncn-table thead th.dt-orderable-asc:hover, table.ncn-table thead th.dt-orderable-desc:hover { outline: none; background: var(--brand-dark); }
-        table.ncn-table thead span.dt-column-order { color: #fff; }
-        /* Header "select all" box: white box, teal tick */
-        table.ncn-table thead .form-check-input { background-color: #fff; border-color: #fff; cursor: pointer; }
-        table.ncn-table thead .form-check-input:checked {
-            background-color: #fff; border-color: #fff;
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%230f7b6c' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
-        }
-        table.ncn-table thead .form-check-input:indeterminate {
-            background-color: #fff; border-color: #fff;
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%230f7b6c' stroke-linecap='round' stroke-width='3' d='M6 10h8'/%3e%3c/svg%3e");
-        }
-        table.ncn-table tbody .form-check-input { cursor: pointer; }
-        table.ncn-table tbody td { padding: .9rem .75rem; border-bottom: 1px solid #eef1f1; color: #111; vertical-align: middle; }
-        table.ncn-table tbody tr:hover > td { background-color: #f7fbfa; }
-        /* Selected rows: light teal background with a teal bar on the left */
-        table.ncn-table tbody tr.is-selected > td { background-color: #e3f2ef !important; box-shadow: none !important; color: inherit; }
-        table.ncn-table tbody tr.is-selected > td:first-child { box-shadow: inset 3px 0 0 var(--brand) !important; }
-        table.ncn-table .col-check { width: 2.5rem; text-align: center; }
-        table.ncn-table .col-actions { width: 1%; }
-        table.ncn-table td.dt-empty { padding: 2.5rem 1rem; color: #6b7280; }
-
-        .filter-count { font-size: .65rem; }
-    </style>
+    @include('partials.ncn-datatable-styles')
 @endpush
 
 @section('content')
@@ -64,9 +12,11 @@
             <h1 class="h4 fw-bold mb-0">Employees</h1>
             <div class="text-muted small">Filter, search, export and manage your employees.</div>
         </div>
-        <a href="{{ route('employees.create') }}" class="btn btn-generate">
-            <i class="bi bi-person-plus me-1"></i> Add Employee
-        </a>
+        @can('employees.create')
+            <a href="{{ route('employees.create') }}" class="btn btn-generate">
+                <i class="bi bi-person-plus me-1"></i> Add Employee
+            </a>
+        @endcan
     </div>
 
     {{-- Filter panel --}}
@@ -177,6 +127,11 @@
     const selectAllBox = () => document.getElementById('select-all');
     const filterForm = document.getElementById('filter-form');
     const initialSearch = @json($search);
+    // What the logged-in user may do; the server checks this again on every request.
+    const can = @json([
+        'update' => auth()->user()->can('employees.update'),
+        'delete' => auth()->user()->can('employees.delete'),
+    ]);
 
     const esc = value => String(value ?? '').replace(/[&<>"']/g, c => (
         { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
@@ -236,17 +191,20 @@
         stateSave: true,
         stateDuration: -1,
         stateLoadParams: (settings, data) => {
+            // The selection column follows the current user's permission, not the saved state.
+            if (data.columns?.[0]) data.columns[0].visible = can.delete;
+
             // A ?search=… link (e.g. "View all colleagues") wins over the saved state.
             if (initialSearch) {
                 data.search.search = initialSearch;
                 data.start = 0;
             }
         },
-        responsive: true,
+        responsive: false, // all columns stay visible; the table scrolls sideways when there is no room
         autoWidth: false,
         columns: [
             {
-                data: 'id', orderable: false, searchable: false, className: 'col-check',
+                data: 'id', orderable: false, searchable: false, className: 'col-check', visible: can.delete,
                 render: display(
                     (id, row) => `<input type="checkbox" class="form-check-input row-check" value="${id}" aria-label="Select ${esc(row.full_name)}">`,
                     () => ''
@@ -258,7 +216,7 @@
             },
             { data: 'id', name: 'id', type: 'string', className: 'export tabular', visible: false },
             {
-                data: 'full_name', name: 'name', className: 'export', responsivePriority: 1,
+                data: 'full_name', name: 'name', className: 'export',
                 render: display((name, row) => `
                     <div class="d-flex align-items-center gap-2">
                         <span class="avatar text-bg-${row.avatar_color}" style="width:32px;height:32px;font-size:12px" aria-hidden="true">${esc(row.initials)}</span>
@@ -283,11 +241,11 @@
             },
             { data: 'added_on', name: 'added_on', type: 'string', className: 'export tabular text-nowrap' },
             {
-                data: null, orderable: false, searchable: false, className: 'text-end text-nowrap col-actions', responsivePriority: 2,
+                data: null, orderable: false, searchable: false, className: 'text-end text-nowrap col-actions',
                 render: display((data, row) => `
                     <a href="${row.urls.show}" class="btn btn-sm btn-light btn-icon" data-bs-toggle="tooltip" title="View" aria-label="View ${esc(row.full_name)}"><i class="bi bi-eye"></i></a>
-                    <a href="${row.urls.edit}" class="btn btn-sm btn-light btn-icon text-primary" data-bs-toggle="tooltip" title="Edit" aria-label="Edit ${esc(row.full_name)}"><i class="bi bi-pencil-square"></i></a>
-                    <button type="button" class="btn btn-sm btn-light btn-icon text-danger js-delete" data-url="${row.urls.destroy}" data-name="${esc(row.full_name)}" data-bs-toggle="tooltip" title="Delete" aria-label="Delete ${esc(row.full_name)}"><i class="bi bi-trash"></i></button>`,
+                    ${can.update ? `<a href="${row.urls.edit}" class="btn btn-sm btn-light btn-icon text-primary" data-bs-toggle="tooltip" title="Edit" aria-label="Edit ${esc(row.full_name)}"><i class="bi bi-pencil-square"></i></a>` : ''}
+                    ${can.delete ? `<button type="button" class="btn btn-sm btn-light btn-icon text-danger js-delete" data-url="${row.urls.destroy}" data-name="${esc(row.full_name)}" data-bs-toggle="tooltip" title="Delete" aria-label="Delete ${esc(row.full_name)}"><i class="bi bi-trash"></i></button>` : ''}`,
                     () => ''),
             },
         ],

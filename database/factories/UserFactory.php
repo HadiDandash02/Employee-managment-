@@ -26,11 +26,28 @@ class UserFactory extends Factory
     {
         return [
             'name' => fake()->name(),
+            'username' => fake()->unique()->userName(),
             'email' => fake()->unique()->safeEmail(),
+            'role' => 'viewer',
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
         ];
+    }
+
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => ['role' => 'admin']);
+    }
+
+    public function hr(): static
+    {
+        return $this->state(fn (array $attributes) => ['role' => 'hr']);
+    }
+
+    public function manager(): static
+    {
+        return $this->state(fn (array $attributes) => ['role' => 'manager']);
     }
 
     /**

@@ -53,22 +53,24 @@
                 </div>
             </div>
 
-            <div class="card border-danger-subtle shadow-sm">
-                <div class="card-header bg-danger-subtle text-danger-emphasis fw-semibold">
-                    <i class="bi bi-exclamation-octagon me-1"></i> Danger zone
+            @can('employees.delete')
+                <div class="card border-danger-subtle shadow-sm">
+                    <div class="card-header bg-danger-subtle text-danger-emphasis fw-semibold">
+                        <i class="bi bi-exclamation-octagon me-1"></i> Danger zone
+                    </div>
+                    <div class="card-body">
+                        <p class="small text-muted">Deleting an employee is permanent and cannot be undone.</p>
+                        <form action="{{ route('employees.destroy', $employee) }}" method="POST"
+                              onsubmit="return confirm('Delete {{ addslashes($employee->full_name) }}? This cannot be undone.')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-outline-danger w-100">
+                                <i class="bi bi-trash me-1"></i> Delete employee
+                            </button>
+                        </form>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <p class="small text-muted">Deleting an employee is permanent and cannot be undone.</p>
-                    <form action="{{ route('employees.destroy', $employee) }}" method="POST"
-                          onsubmit="return confirm('Delete {{ addslashes($employee->full_name) }}? This cannot be undone.')">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn btn-outline-danger w-100">
-                            <i class="bi bi-trash me-1"></i> Delete employee
-                        </button>
-                    </form>
-                </div>
-            </div>
+            @endcan
         </div>
     </div>
 @endsection

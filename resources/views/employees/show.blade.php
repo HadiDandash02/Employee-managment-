@@ -30,17 +30,21 @@
                 </div>
             </div>
             <div class="d-flex flex-wrap gap-2">
-                <a href="{{ route('employees.edit', $employee) }}" class="btn btn-primary">
-                    <i class="bi bi-pencil-square me-1"></i> Edit
-                </a>
-                <form action="{{ route('employees.destroy', $employee) }}" method="POST"
-                      onsubmit="return confirm('Delete {{ addslashes($employee->full_name) }}? This cannot be undone.')">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-outline-danger">
-                        <i class="bi bi-trash me-1"></i> Delete
-                    </button>
-                </form>
+                @can('employees.update')
+                    <a href="{{ route('employees.edit', $employee) }}" class="btn btn-primary">
+                        <i class="bi bi-pencil-square me-1"></i> Edit
+                    </a>
+                @endcan
+                @can('employees.delete')
+                    <form action="{{ route('employees.destroy', $employee) }}" method="POST"
+                          onsubmit="return confirm('Delete {{ addslashes($employee->full_name) }}? This cannot be undone.')">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-outline-danger">
+                            <i class="bi bi-trash me-1"></i> Delete
+                        </button>
+                    </form>
+                @endcan
                 <a href="{{ route('employees.index') }}" class="btn btn-outline-secondary">
                     <i class="bi bi-arrow-left me-1"></i> Back
                 </a>

@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\User;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -21,5 +23,13 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Paginator::useBootstrapFive();
+
+        // Each permission in config/permissions.php becomes a Gate: @can('employees.create'), can:employees.create …
+        foreach (array_keys(config('permissions.permissions')) as $permission) {
+            Gate::define($permission, fn (User $user) => $user->hasPermission($permission));
+        }
+
+        // @can('manage-user', $other): HR may manage HR/Manager/Viewer accounts, but never Admins.
+        Gate::define('manage-user', fn (User $user, User $other) => $user->canManageUser($other));
     }
 }
