@@ -51,6 +51,14 @@ class Employee extends Model
     /**
      * Many-to-many through the employee_skill pivot table, with the skill level on the pivot.
      */
+    /**
+     * The login account of this employee, if they have one (users.employee_id).
+     */
+    public function user(): HasOne
+    {
+        return $this->hasOne(User::class);
+    }
+
     public function skills(): BelongsToMany
     {
         return $this->belongsToMany(Skill::class)->withPivot('level')->withTimestamps();

@@ -37,7 +37,7 @@
                     <p class="opacity-75 mb-4">Manage employee records, departments and salaries in one place.</p>
                     <ul class="list-unstyled small mb-0">
                         <li><i class="bi bi-check2-circle"></i> Search, filter and export employee data</li>
-                        <li><i class="bi bi-check2-circle"></i> Role-based access: Admin, HR, Manager, Viewer</li>
+                        <li><i class="bi bi-check2-circle"></i> Role-based access: Admin, HR, Manager, Employee</li>
                         <li><i class="bi bi-check2-circle"></i> Dashboard with user management</li>
                     </ul>
                 </div>

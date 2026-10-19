@@ -150,6 +150,7 @@
                         <div class="lh-sm">
                             <div class="fw-semibold">${esc(name)}${row.is_self ? ' <span class="badge text-bg-light border fw-normal ms-1">You</span>' : ''}</div>
                             <div class="small text-muted">@${esc(row.username)} · ${esc(row.email)}</div>
+                            ${row.employee ? `<div class="small text-primary"><i class="bi bi-person-vcard me-1"></i>${esc(row.employee)}</div>` : ""}
                         </div>
                     </div>`,
             },

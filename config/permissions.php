@@ -31,6 +31,7 @@ return [
         'employees.delete' => 'Delete employees',
         'users.manage' => 'Manage users',
         'departments.manage' => 'Manage departments',
+        'profile.view-own' => 'See own employee profile',
     ],
 
     'roles' => [
@@ -44,20 +45,21 @@ return [
         'hr' => [
             'label' => 'HR',
             'description' => 'Full access to employees and user management.',
-            'permissions' => ['employees.view', 'employees.create', 'employees.update', 'employees.delete', 'users.manage', 'departments.manage'],
-            'manages' => ['hr', 'manager', 'viewer'],
+            'permissions' => ['employees.view', 'employees.create', 'employees.update', 'employees.delete', 'users.manage', 'departments.manage', 'profile.view-own'],
+            'manages' => ['hr', 'manager', 'employee'],
             'panel' => ['label' => 'HR', 'icon' => 'bi-briefcase', 'slug' => 'hr'],
         ],
         'manager' => [
             'label' => 'Manager',
             'description' => 'Can view, add and edit employees, but not delete them.',
-            'permissions' => ['employees.view', 'employees.create', 'employees.update'],
+            'permissions' => ['employees.view', 'employees.create', 'employees.update', 'profile.view-own'],
             'manages' => [],
         ],
-        'viewer' => [
-            'label' => 'Viewer',
-            'description' => 'Can only view employees.',
-            'permissions' => ['employees.view'],
+        // A login for one employee (users.employee_id): sees only their own profile.
+        'employee' => [
+            'label' => 'Employee',
+            'description' => 'Can only see their own profile.',
+            'permissions' => ['profile.view-own'],
             'manages' => [],
         ],
     ],

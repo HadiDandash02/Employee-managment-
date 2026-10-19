@@ -66,10 +66,11 @@ class ManageUsersPageTest extends TestCase
 
     public function test_users_can_be_sorted_by_role(): void
     {
-        User::factory()->create(['name' => 'Victor Viewer']);
+        User::factory()->create(['name' => 'Eve Employee']);
         User::factory()->hr()->create(['name' => 'Helen HR']);
 
-        $this->assertSame(['Main Admin', 'Helen HR', 'Victor Viewer'], $this->names($this->usersData(['order' => [['column' => 2, 'dir' => 'asc']]])));
+        // alphabetical by role: admin, employee, hr
+        $this->assertSame(['Main Admin', 'Eve Employee', 'Helen HR'], $this->names($this->usersData(['order' => [['column' => 2, 'dir' => 'asc']]])));
     }
 
     public function test_rows_never_contain_passwords(): void

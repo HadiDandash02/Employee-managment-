@@ -213,9 +213,17 @@
                     <i class="bi bi-grid-1x2"></i> Dashboard
                 </a>
             @endcan
-            <a href="{{ route('employees.index') }}" class="side-link {{ request()->routeIs('employees.*') ? 'active' : '' }}">
-                <i class="bi bi-people"></i> Manage Employees
-            </a>
+            {{-- Own employee record: always for the Employee role, for others only when their login is linked --}}
+            @if ($me->can('profile.view-own') && ($me->employee_id || $me->cannot('employees.view')))
+                <a href="{{ route('profile.show') }}" class="side-link {{ request()->routeIs('profile.show') ? 'active' : '' }}">
+                    <i class="bi bi-person-vcard"></i> My Profile
+                </a>
+            @endif
+            @can('employees.view')
+                <a href="{{ route('employees.index') }}" class="side-link {{ request()->routeIs('employees.*') ? 'active' : '' }}">
+                    <i class="bi bi-people"></i> Manage Employees
+                </a>
+            @endcan
             @can('departments.manage')
                 <a href="{{ route('admin.departments.index') }}" class="side-link {{ request()->routeIs('admin.departments.*') ? 'active' : '' }}">
                     <i class="bi bi-diagram-3"></i> Manage Departments

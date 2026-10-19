@@ -29,7 +29,7 @@ class AppServiceProvider extends ServiceProvider
             Gate::define($permission, fn (User $user) => $user->hasPermission($permission));
         }
 
-        // @can('manage-user', $other): HR may manage HR/Manager/Viewer accounts, but never Admins.
+        // @can('manage-user', $other): HR may manage HR/Manager/Employee accounts, but never Admins.
         Gate::define('manage-user', fn (User $user, User $other) => $user->canManageUser($other));
     }
 }
