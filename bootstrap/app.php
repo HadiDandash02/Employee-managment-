@@ -14,6 +14,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // Guests are sent to the login page; logged-in users visiting /login go to their start page.
         $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->redirectUsersTo(fn () => route('home'));
+
+        // Route middleware alias: Route::middleware('active') = only active (not suspended) users.
+        $middleware->alias([
+            'active' => \App\Http\Middleware\CheckEmployeeStatus::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

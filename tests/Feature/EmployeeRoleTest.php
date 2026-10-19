@@ -30,7 +30,7 @@ class EmployeeRoleTest extends TestCase
         User::factory()->create(['username' => 'olivia', 'password' => 'secret-pass', 'role' => 'employee', 'employee_id' => $employee->id]);
 
         $this->post(route('login.store'), ['login' => 'olivia', 'password' => 'secret-pass'])
-            ->assertRedirect(route('profile.show'));
+            ->assertRedirect(route('employee.dashboard'));
 
         $this->get(route('profile.show'))
             ->assertOk()

@@ -94,7 +94,7 @@ class AuthTest extends TestCase
         $this->actingAs(User::factory()->admin()->create())->get('/')->assertRedirect(url('/admin/dashboard'));
         $this->actingAs(User::factory()->hr()->create())->get('/')->assertRedirect(url('/hr/dashboard'));
         $this->actingAs(User::factory()->manager()->create())->get('/')->assertRedirect(route('employees.index'));
-        $this->actingAs(User::factory()->create())->get('/')->assertRedirect(route('profile.show')); // Employee role
+        $this->actingAs(User::factory()->create())->get('/')->assertRedirect(route('employee.dashboard')); // Employee role
     }
 
     public function test_hr_logs_in_to_the_hr_dashboard(): void

@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\EmployeeDashboardController;
 use App\Http\Controllers\MyProfileController;
 use App\Http\Middleware\SetPanelPrefix;
 use Illuminate\Http\Request;
@@ -27,8 +28,12 @@ Route::middleware(['auth', 'auth.session', SetPanelPrefix::class])->group(functi
     Route::get('account', [AccountController::class, 'edit'])->name('account.edit');
     Route::put('account/password', [AccountController::class, 'updatePassword'])->name('account.password');
 
-    // The user's own employee record (start page of the Employee role).
-    Route::get('my-profile', MyProfileController::class)->middleware('can:profile.view-own')->name('profile.show');
+    // Employee pages: only users with the permission AND an active (not suspended) account.
+    // "active" is the CheckEmployeeStatus middleware (alias registered in bootstrap/app.php).
+    Route::middleware(['can:profile.view-own', 'active'])->group(function () {
+        Route::get('employee/dashboard', EmployeeDashboardController::class)->name('employee.dashboard');
+        Route::get('my-profile', MyProfileController::class)->name('profile.show');
+    });
 
     // Employees: every action needs its own permission (config/permissions.php).
     Route::middleware('can:employees.view')->group(function () {

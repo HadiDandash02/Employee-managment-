@@ -171,7 +171,8 @@ class AdminUserTest extends TestCase
         $this->actingAs(User::factory()->create(['name' => 'Eve Employee']));
         $sidebar = Str::between($this->get(route('profile.show'))->assertSee('Eve Employee')->getContent(), '<aside', '</aside>');
         $this->assertStringContainsString('My Profile', $sidebar);
-        foreach (['Dashboard', 'Manage Employees', 'Manage Users', 'Manage Departments'] as $item) {
+        $this->assertStringContainsString(route('employee.dashboard'), $sidebar); // their own dashboard
+        foreach (['Manage Employees', 'Manage Users', 'Manage Departments', route('admin.dashboard', ['panel' => 'admin'])] as $item) {
             $this->assertStringNotContainsString($item, $sidebar);
         }
     }

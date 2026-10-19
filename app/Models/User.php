@@ -26,6 +26,7 @@ class User extends Authenticatable
         'password',
         'role',
         'employee_id',
+        'is_active',
     ];
 
     /**
@@ -48,6 +49,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
     }
 
@@ -118,14 +120,14 @@ class User extends Authenticatable
 
     /**
      * Where this user lands after logging in: their dashboard if they have one, otherwise the employee list,
-     * or (Employee role) their own profile.
+     * or (Employee role) their own Employee Dashboard.
      */
     public function homeUrl(): string
     {
         return match (true) {
             (bool) $this->panel_slug => route('admin.dashboard', ['panel' => $this->panel_slug]),
             $this->hasPermission('employees.view') => route('employees.index'),
-            default => route('profile.show'), // Employee role: their own profile
+            default => route('employee.dashboard'), // Employee role: their own dashboard
         };
     }
 
