@@ -64,7 +64,7 @@
                 </div>
                 <div class="login-feature">
                     <span class="icon"><i class="bi bi-shield-lock"></i></span>
-                    <div><div class="fw-semibold">Role-based access</div><small>Admin, HR, Manager and Viewer each see only what they need.</small></div>
+                    <div><div class="fw-semibold">Role-based access</div><small>Admin, HR, Manager and Employee each see only what they need.</small></div>
                 </div>
             </div>
 
