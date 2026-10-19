@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Employee;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -52,7 +53,7 @@ class UserController extends Controller
             $query->where(fn ($q) => $q->where('name', 'like', $like)->orWhere('username', 'like', $like)->orWhere('email', 'like', $like));
         };
 
-        $base = User::whereIn('role', $visibleRoles);
+        $base = User::with('employee')->whereIn('role', $visibleRoles);
         $query = (clone $base)
             ->when($name !== '', fn ($q) => $matches($q, $name))
             ->when($role !== '', fn ($q) => $q->where('role', $role)) // combined with whereIn above: a hidden role gives no rows
@@ -82,6 +83,7 @@ class UserController extends Controller
                 'role_label' => $user->role_label,
                 'role_color' => $user->role_color,
                 'created_at' => $user->created_at?->format('Y-m-d'),
+                'employee' => $user->employee?->full_name,
                 'is_self' => $user->is($actor),
                 'can_delete' => ! $user->is($actor) && ! ($user->isAdmin() && $adminCount <= 1),
                 'urls' => [
@@ -96,8 +98,9 @@ class UserController extends Controller
     public function create(Request $request)
     {
         return view('admin.users.create', [
-            'user' => new User(['role' => 'viewer']),
+            'user' => new User(['role' => 'employee']),
             'roles' => $this->assignableRoles($request->user()),
+            'employees' => $this->linkableEmployees(),
         ]);
     }
 
@@ -115,6 +118,7 @@ class UserController extends Controller
         return view('admin.users.edit', [
             'user' => $user,
             'roles' => $this->assignableRoles($request->user()),
+            'employees' => $this->linkableEmployees($user),
         ]);
     }
 
@@ -192,7 +196,27 @@ class UserController extends Controller
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user)],
             'role' => ['required', Rule::in($request->user()->manageableRoles())],
             'password' => [$user ? 'nullable' : 'required', 'confirmed', Password::min(8)],
+            // The employee record this login belongs to: required for the Employee role, one login per employee.
+            'employee_id' => [
+                Rule::requiredIf($request->input('role') === 'employee'), 'nullable', 'integer',
+                'exists:employees,id', Rule::unique('users', 'employee_id')->ignore($user),
+            ],
+        ], [
+            'employee_id.required' => 'Please choose the employee this login belongs to.',
+            'employee_id.unique' => 'This employee already has a login.',
+            'employee_id.exists' => 'The selected employee does not exist.',
         ]);
+    }
+
+    /**
+     * Employees that can be linked to a login: those without one yet (plus the user's current one).
+     */
+    private function linkableEmployees(?User $user = null)
+    {
+        return Employee::query()
+            ->whereDoesntHave('user', fn ($q) => $q->when($user, fn ($q) => $q->whereKeyNot($user->getKey())))
+            ->orderBy('first_name')->orderBy('last_name')
+            ->get(['id', 'first_name', 'last_name', 'email']);
     }
 
     private function ensureAnotherAdminExists(User $user, string $field): void

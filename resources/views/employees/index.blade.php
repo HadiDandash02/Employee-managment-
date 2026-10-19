@@ -3,7 +3,7 @@
 @section('title', 'Employees')
 
 @push('styles')
-    @include('partials.ncn-datatable-styles')
+    @include('partials.datatable-styles')
 @endpush
 
 @section('content')
@@ -35,6 +35,19 @@
                                 <optgroup label="{{ $location }}">
                                     @foreach ($group as $department)
                                         <option value="{{ $department->id }}" @selected((string) request('filters.department_id') === (string) $department->id)>{{ $department->name }}</option>
+                                    @endforeach
+                                </optgroup>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="f-branch" class="form-label">Select branch</label>
+                        <select id="f-branch" name="branch_id" class="form-select select-divider">
+                            <option value="">Select branch</option>
+                            @foreach ($branches->groupBy(fn ($branch) => $branch->company?->name ?? 'No company') as $company => $group)
+                                <optgroup label="{{ $company }}">
+                                    @foreach ($group as $branch)
+                                        <option value="{{ $branch->id }}" @selected((string) request('filters.branch_id') === (string) $branch->id)>{{ $branch->name }}</option>
                                     @endforeach
                                 </optgroup>
                             @endforeach
@@ -106,7 +119,7 @@
             <button type="button" id="bulk-clear" class="btn btn-sm btn-link text-decoration-none">Clear selection</button>
         </div>
 
-        <table id="employees-table" class="table ncn-table w-100">
+        <table id="employees-table" class="table app-table w-100">
             <thead>
                 <tr>
                     <th class="col-check"><input type="checkbox" class="form-check-input" id="select-all" aria-label="Select all on this page"></th>
@@ -116,6 +129,7 @@
                     <th>Email</th>
                     <th>Department</th>
                     <th>Salary</th>
+                    <th>Hire Date</th>
                     <th>Date of Birth</th>
                     <th>Added On</th>
                     <th>Actions</th>
@@ -216,7 +230,9 @@
                 data.start = 0;
             }
         },
-        responsive: false, // all columns stay visible; the table scrolls sideways when there is no room
+        // All columns stay visible: the table scrolls sideways when it is wider than the page,
+        // and the Actions column stays pinned on the right (see partials/datatable-styles).
+        responsive: false,
         autoWidth: false,
         columns: [
             {
@@ -253,6 +269,11 @@
             {
                 data: 'salary', name: 'salary', type: 'string', className: 'export tabular text-nowrap',
                 render: display((salary, row) => row.salary_formatted, salary => salary),
+            },
+            {
+                // from the employee's profile (hasOne); sortable on the server
+                data: 'hire_date', name: 'hire_date', type: 'string', className: 'export tabular text-nowrap',
+                render: display(hire => hire ? esc(hire) : '<span class="text-muted">—</span>', hire => hire ?? ''),
             },
             {
                 data: 'date_of_birth', name: 'date_of_birth', type: 'string', className: 'export tabular text-nowrap',

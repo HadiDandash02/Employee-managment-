@@ -20,6 +20,8 @@ class DepartmentFactory extends Factory
         return [
             'branch_id' => Branch::factory(),
             'name' => fake()->randomElement(['Engineering', 'Sales', 'Marketing', 'HR', 'Finance', 'Support']),
+            'code' => strtoupper(fake()->unique()->bothify('???-###')),
+            'description' => fake()->optional()->sentence(),
         ];
     }
 }

@@ -60,7 +60,7 @@
                         <tbody>
                             @foreach ($users as $user)
                                 @php
-                                    $roleColor = ['admin' => 'danger', 'hr' => 'warning', 'manager' => 'primary', 'viewer' => 'secondary'][$user->role] ?? 'secondary';
+                                    $roleColor = $user->role_color;
                                 @endphp
                                 <tr>
                                     <td class="ps-3">

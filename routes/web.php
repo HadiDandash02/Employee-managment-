@@ -4,7 +4,9 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\MyProfileController;
 use App\Http\Middleware\SetPanelPrefix;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -24,6 +26,9 @@ Route::middleware(['auth', 'auth.session', SetPanelPrefix::class])->group(functi
     // Every user, whatever their role, can change their own password.
     Route::get('account', [AccountController::class, 'edit'])->name('account.edit');
     Route::put('account/password', [AccountController::class, 'updatePassword'])->name('account.password');
+
+    // The user's own employee record (start page of the Employee role).
+    Route::get('my-profile', MyProfileController::class)->middleware('can:profile.view-own')->name('profile.show');
 
     // Employees: every action needs its own permission (config/permissions.php).
     Route::middleware('can:employees.view')->group(function () {
@@ -62,5 +67,14 @@ Route::middleware(['auth', 'auth.session', SetPanelPrefix::class])->group(functi
             Route::get('dashboard', DashboardController::class)->name('dashboard');
             Route::get('users/data', [UserController::class, 'data'])->name('users.data');
             Route::resource('users', UserController::class)->except(['show']);
+        });
+
+    // Manage Departments (Admin/HR): /admin/departments or /hr/departments.
+    Route::middleware('can:departments.manage')
+        ->prefix('{panel}')
+        ->where(['panel' => $panelSlugs])
+        ->name('admin.')
+        ->group(function () {
+            Route::resource('departments', DepartmentController::class)->except(['show']);
         });
 });

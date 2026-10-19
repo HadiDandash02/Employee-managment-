@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -24,6 +25,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'employee_id',
     ];
 
     /**
@@ -47,6 +49,14 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * The employee record this login belongs to (users.employee_id), used by the Employee role.
+     */
+    public function employee(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class);
     }
 
     public function isAdmin(): bool
@@ -107,11 +117,16 @@ class User extends Authenticatable
     }
 
     /**
-     * Where this user lands after logging in: their dashboard if they have one, otherwise the employee list.
+     * Where this user lands after logging in: their dashboard if they have one, otherwise the employee list,
+     * or (Employee role) their own profile.
      */
     public function homeUrl(): string
     {
-        return $this->panel_slug ? route('admin.dashboard', ['panel' => $this->panel_slug]) : route('employees.index');
+        return match (true) {
+            (bool) $this->panel_slug => route('admin.dashboard', ['panel' => $this->panel_slug]),
+            $this->hasPermission('employees.view') => route('employees.index'),
+            default => route('profile.show'), // Employee role: their own profile
+        };
     }
 
     public function getPanelIconAttribute(): string
@@ -124,7 +139,7 @@ class User extends Authenticatable
      */
     public function getRoleColorAttribute(): string
     {
-        return ['admin' => 'danger', 'hr' => 'warning', 'manager' => 'primary', 'viewer' => 'secondary'][$this->role] ?? 'secondary';
+        return ['admin' => 'danger', 'hr' => 'warning', 'manager' => 'primary', 'employee' => 'info'][$this->role] ?? 'secondary';
     }
 
     public function getRoleLabelAttribute(): string

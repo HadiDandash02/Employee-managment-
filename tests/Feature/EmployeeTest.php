@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Branch;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\User;
@@ -36,8 +37,8 @@ class EmployeeTest extends TestCase
      */
     private function dataTable(array $params = [])
     {
-        $columns = collect(['', '', 'id', 'name', 'email', 'department', 'salary', 'date_of_birth', 'added_on', ''])
-            ->map(fn ($name, $i) => ['data' => $i, 'name' => $name, 'orderable' => in_array($i, [0, 1, 9]) ? 'false' : 'true'])
+        $columns = collect(['', '', 'id', 'name', 'email', 'department', 'salary', 'hire_date', 'date_of_birth', 'added_on', ''])
+            ->map(fn ($name, $i) => ['data' => $i, 'name' => $name, 'orderable' => in_array($i, [0, 1, 10]) ? 'false' : 'true'])
             ->all();
 
         return $this->getJson(route('employees.data', array_replace_recursive([
@@ -139,6 +140,55 @@ class EmployeeTest extends TestCase
         $this->assertSame([], $names(['added_to' => now()->subDay()->toDateString()]));
 
         $this->dataTable(['filters' => ['department_id' => $sales]])->assertJson(['recordsTotal' => 3, 'recordsFiltered' => 2]);
+    }
+
+    public function test_default_page_size_is_10(): void
+    {
+        Employee::factory(12)->create();
+
+        $this->assertCount(10, $this->getJson(route('employees.data'))->json('data'));
+    }
+
+    public function test_data_can_be_searched_by_email_and_department(): void
+    {
+        Employee::factory()->inDepartment('Logistics')->create(['first_name' => 'Ann', 'email' => 'ann@north.test']);
+        Employee::factory()->inDepartment('Finance')->create(['first_name' => 'Ben', 'email' => 'ben@south.test']);
+
+        $this->assertStringStartsWith('Ann', $this->names($this->dataTable(['search' => ['value' => 'north.test']]))[0]);
+        $this->assertCount(1, $this->dataTable(['search' => ['value' => 'logist']])->json('data'));
+        $this->assertStringStartsWith('Ann', $this->names($this->dataTable(['search' => ['value' => 'logist']]))[0]);
+    }
+
+    public function test_data_can_be_sorted_by_hire_date(): void
+    {
+        foreach (['Mid' => '2020-06-01', 'Old' => '2015-01-10', 'New' => '2024-03-05'] as $name => $hired) {
+            $employee = Employee::factory()->create(['first_name' => $name, 'last_name' => 'X']);
+            $employee->profile()->create(['hire_date' => $hired]);
+        }
+
+        $asc = $this->dataTable(['order' => [['column' => 7, 'dir' => 'asc']]]);
+        $this->assertSame(['Old X', 'Mid X', 'New X'], $this->names($asc));
+        $this->assertSame('2015-01-10', $asc->json('data.0.hire_date'));
+
+        $this->assertSame(['New X', 'Mid X', 'Old X'], $this->names($this->dataTable(['order' => [['column' => 7, 'dir' => 'desc']]])));
+    }
+
+    public function test_data_can_be_filtered_by_branch(): void
+    {
+        $beirut = Branch::factory()->create(['name' => 'Beirut']);
+        $tripoli = Branch::factory()->create(['name' => 'Tripoli']);
+        Employee::factory()->for(Department::factory()->for($beirut))->create(['first_name' => 'Bea', 'last_name' => 'X']);
+        Employee::factory()->for(Department::factory()->for($beirut))->create(['first_name' => 'Bob', 'last_name' => 'X']);
+        Employee::factory()->for(Department::factory()->for($tripoli))->create(['first_name' => 'Tom', 'last_name' => 'X']);
+
+        $names = fn (array $filters) => $this->names($this->dataTable(['filters' => $filters, 'order' => [['column' => 3, 'dir' => 'asc']]]));
+
+        $this->assertSame(['Bea X', 'Bob X'], $names(['branch_id' => $beirut->id]));
+        $this->assertSame(['Tom X'], $names(['branch_id' => $tripoli->id]));
+
+        $this->get(route('employees.index'))
+            ->assertSee('Select branch')
+            ->assertSee('<option value="'.$beirut->id.'" >Beirut</option>', false);
     }
 
     public function test_invalid_filter_values_are_ignored(): void

@@ -26,7 +26,7 @@ class AuthTest extends TestCase
 
     public function test_user_can_log_in_with_username_or_email(): void
     {
-        $user = User::factory()->create(['username' => 'jane', 'email' => 'jane@example.com', 'password' => 'secret-pass']);
+        $user = User::factory()->manager()->create(['username' => 'jane', 'email' => 'jane@example.com', 'password' => 'secret-pass']);
 
         $this->post(route('login.store'), ['login' => 'jane', 'password' => 'secret-pass'])
             ->assertRedirect(route('employees.index'));
@@ -94,7 +94,7 @@ class AuthTest extends TestCase
         $this->actingAs(User::factory()->admin()->create())->get('/')->assertRedirect(url('/admin/dashboard'));
         $this->actingAs(User::factory()->hr()->create())->get('/')->assertRedirect(url('/hr/dashboard'));
         $this->actingAs(User::factory()->manager()->create())->get('/')->assertRedirect(route('employees.index'));
-        $this->actingAs(User::factory()->create())->get('/')->assertRedirect(route('employees.index'));
+        $this->actingAs(User::factory()->create())->get('/')->assertRedirect(route('profile.show')); // Employee role
     }
 
     public function test_hr_logs_in_to_the_hr_dashboard(): void
@@ -115,13 +115,17 @@ class AuthTest extends TestCase
         $this->get(url('/hr'))->assertNotFound();
     }
 
-    public function test_viewer_can_only_view_employees(): void
+    public function test_employee_role_sees_only_their_own_profile(): void
     {
         $employee = Employee::factory()->create();
-        $this->actingAs(User::factory()->create(['role' => 'viewer']));
+        $own = Employee::factory()->create(['first_name' => 'Olivia', 'last_name' => 'Own']);
+        $this->actingAs(User::factory()->create(['role' => 'employee', 'employee_id' => $own->id]));
 
-        $this->get(route('employees.index'))->assertOk()->assertDontSee('Add Employee');
-        $this->get(route('employees.show', $employee))->assertOk()->assertDontSee('Danger zone');
+        $this->get(route('profile.show'))->assertOk()->assertSee('Olivia Own')->assertDontSee($employee->email);
+        $this->get(route('employees.index'))->assertForbidden();
+        $this->getJson(route('employees.data'))->assertForbidden();
+        $this->get(route('employees.show', $own))->assertForbidden();
+        $this->get(route('employees.show', $employee))->assertForbidden();
         $this->get(route('employees.create'))->assertForbidden();
         $this->get(route('employees.edit', $employee))->assertForbidden();
         $this->put(route('employees.update', $employee), [])->assertForbidden();

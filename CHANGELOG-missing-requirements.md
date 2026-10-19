@@ -60,3 +60,27 @@ C:\xampp\mysql\bin\mysqldump -P 3307 -u root employee_crud > storage/app/private
 php artisan migrate
 php artisan db:seed --class=OrganizationSeeder   # optional: sample companies, branches, departments, skills
 ```
+
+## 6. Manage Departments — *CRUD, Form Request, soft deletes, eager loading (N+1)*
+
+| Change | Why |
+|---|---|
+| Migration `2026_10_19_000009`: `departments.code` (unique), `description` (nullable), `deleted_at`. Existing departments get a generated code such as `ENG-1` before the unique index is added | Safe on the existing data. Every department has a short unique code. |
+| `SoftDeletes` on `Department` | Deleting a department keeps the row (`deleted_at`). Lists and dropdowns skip it automatically. |
+| `DepartmentController` (index, create, store, edit, update, destroy) + `DepartmentRequest` (name required and unique per branch, code required/unique/`alpha_dash` and saved in capitals, branch `exists`, description `nullable`, custom messages and attributes) | Full CRUD with validation in a Form Request. |
+| Index: `Department::with('branch.company')->withCount('employees')`, paginated, search by name or code | **N+1 fix**: the branch, company and employee count come from a fixed number of queries, whatever the number of rows (checked by a test). |
+| Delete is refused while the department still has active employees | Same protection as the database's `restrictOnDelete`, which a soft delete would not trigger. |
+| Views `admin/departments/{index,_form,create,edit}` (Bootstrap): Name, Code, Branch (+ company), Employees count (links to the filtered employee list), ⋮ Edit / Delete | The required list and forms. |
+| Permission `departments.manage` (Admin, HR); routes `/admin/departments` and `/hr/departments`; sidebar link **Manage Departments** | Only Admin/HR can see and use it. |
+| Tests: `DepartmentTest` (13 tests); `RelationshipsTest` now uses `forceDelete()` to check the database RESTRICT rule; the backfill test rolls back 5 migrations | 103 tests passing. |
+
+## 7. Employee role (replaces Viewer) — *one-to-one relationship, authorization*
+
+| Change | Why |
+|---|---|
+| Migration `2026_10_19_000010`: `users.employee_id` (FK to employees, **unique**, **SET NULL** on delete); existing `viewer` users become `employee`; default role is now `employee` | A login can belong to one employee record (one-to-one: `User::employee()` belongsTo, `Employee::user()` hasOne). |
+| Role **Employee** with the new permission `profile.view-own` (Viewer removed). HR can manage Employee logins | Employees log in and see **only their own** record. |
+| **My Profile** page (`/my-profile`): personal info, department, branch, company, hire date, salary and skills; no department average and no colleagues | Privacy: an employee never sees other employees' data. It's their start page after login. |
+| Sidebar: **My Profile** (Employee role, or staff whose login is linked); **Manage Employees** only with `employees.view` | Each role only sees the menu items it can use. |
+| Manage Users: **Linked employee** picker (required for the Employee role, one login per employee, already-linked employees not offered); the users table shows the linked employee | Admin/HR create employee logins. |
+| Tests: `EmployeeRoleTest` (9) plus updated role tests | 116 tests passing. |

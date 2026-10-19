@@ -40,6 +40,23 @@
                 </select>
                 @error('role') <div class="invalid-feedback">{{ $message }}</div> @enderror
             </div>
+
+            {{-- Which employee record this login belongs to (users.employee_id) --}}
+            <div class="col-md-6">
+                <label for="employee_id" class="form-label">
+                    Linked employee <span class="text-danger" id="employee-required">*</span>
+                </label>
+                <select id="employee_id" name="employee_id" class="form-select select-divider @error('employee_id') is-invalid @enderror">
+                    <option value="">Not linked</option>
+                    @foreach ($employees ?? [] as $employee)
+                        <option value="{{ $employee->id }}" @selected((string) old('employee_id', $user->employee_id) === (string) $employee->id)>
+                            {{ $employee->full_name }} — {{ $employee->email }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('employee_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                <div class="form-text" id="employee-hint">Required for the Employee role: they will only see this employee's profile.</div>
+            </div>
         </div>
 
         <hr class="my-4">
@@ -74,5 +91,20 @@
 <script>
     // Coming from "Reset" in the users table: put the cursor in the new password box.
     if (location.hash === '#set-password') document.getElementById('password').focus();
+
+    // "Linked employee" is required only for the Employee role.
+    (() => {
+        const role = document.getElementById('role');
+        const sync = () => {
+            const isEmployee = role.value === 'employee';
+            document.getElementById('employee_id').required = isEmployee;
+            document.getElementById('employee-required').classList.toggle('d-none', !isEmployee);
+            document.getElementById('employee-hint').textContent = isEmployee
+                ? 'Required for the Employee role: they will only see this employee\'s profile.'
+                : 'Optional: link a staff login to its own employee record (shows "My Profile").';
+        };
+        role.addEventListener('change', sync);
+        sync();
+    })();
 </script>
 @endpush

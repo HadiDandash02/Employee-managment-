@@ -3,7 +3,7 @@
 @section('title', 'Manage Users')
 
 @push('styles')
-    @include('partials.ncn-datatable-styles')
+    @include('partials.datatable-styles')
     <style>
         .password-mask { letter-spacing: .15em; color: #6b7280; font-weight: 700; }
     </style>
@@ -63,7 +63,7 @@
             </button>
         </div>
 
-        <table id="users-table" class="table ncn-table w-100">
+        <table id="users-table" class="table app-table w-100">
             <thead>
                 <tr>
                     <th>#</th>
@@ -136,6 +136,7 @@
         pageLength: {{ $pageLengths[0] }},
         lengthMenu: @json($pageLengths),
         autoWidth: false,
+        responsive: false, // scrolls sideways; the Actions column stays pinned on the right
         columns: [
             {
                 data: null, orderable: false, searchable: false, type: 'string', width: '3rem', className: 'tabular',
@@ -149,6 +150,7 @@
                         <div class="lh-sm">
                             <div class="fw-semibold">${esc(name)}${row.is_self ? ' <span class="badge text-bg-light border fw-normal ms-1">You</span>' : ''}</div>
                             <div class="small text-muted">@${esc(row.username)} · ${esc(row.email)}</div>
+                            ${row.employee ? `<div class="small text-primary"><i class="bi bi-person-vcard me-1"></i>${esc(row.employee)}</div>` : ""}
                         </div>
                     </div>`,
             },

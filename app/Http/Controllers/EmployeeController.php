@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreEmployeeRequest;
 use App\Http\Requests\UpdateEmployeeRequest;
+use App\Models\Branch;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Skill;
@@ -27,6 +28,7 @@ class EmployeeController extends Controller
             'search' => trim($request->string('search')),
             'pageLengths' => self::PAGE_LENGTHS,
             'departments' => $this->departments(),
+            'branches' => Branch::with('company')->get()->sortBy(fn (Branch $branch) => [$branch->company?->name, $branch->name])->values(),
             'trashCount' => Employee::onlyTrashed()->count(),
         ]);
     }
@@ -60,7 +62,7 @@ class EmployeeController extends Controller
 
         $base = $trash ? Employee::onlyTrashed() : Employee::query();
         $filters = is_array($request->query('filters')) ? $request->query('filters') : [];
-        $query = (clone $base)->with('department.branch')->search($search)->filter($filters)->sortBy($sort, $direction);
+        $query = (clone $base)->with(['department.branch', 'profile'])->search($search)->filter($filters)->sortBy($sort, $direction);
         $filtered = (clone $query)->count();
 
         if ($length !== -1) {
@@ -86,6 +88,7 @@ class EmployeeController extends Controller
                 'date_of_birth' => $employee->date_of_birth->format('Y-m-d'),
                 'date_of_birth_formatted' => $employee->date_of_birth->format('d M Y'),
                 'age' => $employee->age,
+                'hire_date' => $employee->profile?->hire_date?->format('Y-m-d'),
                 'added_on' => $employee->created_at?->format('Y-m-d H:i:s'),
                 'deleted_at' => $employee->deleted_at?->format('Y-m-d H:i'),
                 'urls' => $employee->trashed()

@@ -12,7 +12,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     @stack('styles')
     <style>
-        /* ---- Theme (teal, same look as the NCN system) ---- */
+        /* ---- Theme (teal) ---- */
         :root {
             --brand: #0f7b6c;
             --brand-dark: #0b6357;
@@ -156,7 +156,7 @@
         .panel-title { font-size: .78rem; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; margin: 0; color: #111; }
         .panel-body { padding: 1.1rem; }
 
-        /* Form controls like the NCN filters */
+        /* Form controls (filters and forms) */
         .form-label { font-weight: 600; font-size: .8rem; color: #1f2937; margin-bottom: .35rem; }
         .form-control, .form-select { border-color: #dfe5e5; border-radius: .55rem; min-height: 2.35rem; font-size: .82rem; }
         .form-select.select-divider {
@@ -213,9 +213,22 @@
                     <i class="bi bi-grid-1x2"></i> Dashboard
                 </a>
             @endcan
-            <a href="{{ route('employees.index') }}" class="side-link {{ request()->routeIs('employees.*') ? 'active' : '' }}">
-                <i class="bi bi-people"></i> Manage Employees
-            </a>
+            {{-- Own employee record: always for the Employee role, for others only when their login is linked --}}
+            @if ($me->can('profile.view-own') && ($me->employee_id || $me->cannot('employees.view')))
+                <a href="{{ route('profile.show') }}" class="side-link {{ request()->routeIs('profile.show') ? 'active' : '' }}">
+                    <i class="bi bi-person-vcard"></i> My Profile
+                </a>
+            @endif
+            @can('employees.view')
+                <a href="{{ route('employees.index') }}" class="side-link {{ request()->routeIs('employees.*') ? 'active' : '' }}">
+                    <i class="bi bi-people"></i> Manage Employees
+                </a>
+            @endcan
+            @can('departments.manage')
+                <a href="{{ route('admin.departments.index') }}" class="side-link {{ request()->routeIs('admin.departments.*') ? 'active' : '' }}">
+                    <i class="bi bi-diagram-3"></i> Manage Departments
+                </a>
+            @endcan
             @can('users.manage')
                 <a href="{{ route('admin.users.index') }}" class="side-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                     <i class="bi bi-person-badge"></i> Manage Users

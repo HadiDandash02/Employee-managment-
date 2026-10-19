@@ -167,13 +167,13 @@ class AdminUserTest extends TestCase
             $topbar
         );
 
-        $this->actingAs(User::factory()->create(['name' => 'Vic Viewer']))
-            ->get(route('employees.index'))
-            ->assertSee('Vic Viewer')
-            ->assertSee('Viewer')
-            ->assertDontSee('Dashboard')
-            ->assertDontSee('Add User')
-            ->assertDontSee('Add Employee');
+        // Employee role: only My Profile in the menu, no dashboard, users or employee list.
+        $this->actingAs(User::factory()->create(['name' => 'Eve Employee']));
+        $sidebar = Str::between($this->get(route('profile.show'))->assertSee('Eve Employee')->getContent(), '<aside', '</aside>');
+        $this->assertStringContainsString('My Profile', $sidebar);
+        foreach (['Dashboard', 'Manage Employees', 'Manage Users', 'Manage Departments'] as $item) {
+            $this->assertStringNotContainsString($item, $sidebar);
+        }
     }
 
     public function test_hr_cannot_give_the_admin_role(): void
@@ -228,7 +228,7 @@ class AdminUserTest extends TestCase
 
         $this->get(route('admin.dashboard'))
             ->assertSee('Helen HR')
-            ->assertViewHas('roles', fn ($roles) => array_keys($roles) === ['admin', 'hr', 'manager', 'viewer']);
+            ->assertViewHas('roles', fn ($roles) => array_keys($roles) === ['admin', 'hr', 'manager', 'employee']);
         $this->get(route('admin.users.edit', $hr))->assertOk();
     }
 
@@ -240,9 +240,9 @@ class AdminUserTest extends TestCase
             'name' => $other->name,
             'username' => $other->username,
             'email' => $other->email,
-            'role' => 'viewer',
+            'role' => 'manager',
         ])->assertSessionHasNoErrors();
 
-        $this->assertSame('viewer', $other->fresh()->role);
+        $this->assertSame('manager', $other->fresh()->role);
     }
 }
