@@ -41,7 +41,7 @@ Tests: **63 → 90 passing** (`php artisan test`).
 
 ## 4. ER diagram — *Database design documentation*
 
-`docs/er-diagram.md`: a Mermaid `erDiagram` of all tables, plus a table explaining every relationship (type, FK, on-delete rule, Eloquent methods, reason), the indexes, soft deletes and the migration from the old schema.
+`docs/er-diagram.md` + `docs/er-diagram.svg`: the ER diagram as an image (shows in any Markdown viewer) and as Mermaid code (left-to-right, teal theme, FK delete rules on each key, with a symbol legend), plus a table explaining every relationship (type, FK, on-delete rule, Eloquent methods, reason), the indexes, soft deletes and the migration from the old schema.
 
 ## 5. Theory quiz — *PHP, Laravel, Git, HTML, MySQL, validation, normalization*
 

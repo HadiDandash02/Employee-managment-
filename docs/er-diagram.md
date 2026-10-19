@@ -4,83 +4,76 @@ The database is **normalized**: every fact is stored once, and tables point to e
 **foreign keys** (FK) instead of repeating text. A company has branches, a branch has departments,
 and a department has employees. An employee has one profile and many skills.
 
+![ER diagram of the Employee Management System](er-diagram.svg)
+
+*The picture above is `er-diagram.svg`, which shows in any Markdown viewer (VS Code, GitHub). The same diagram as Mermaid code is below; GitHub draws it automatically, and you can edit it at <https://mermaid.live>.*
+
 ```mermaid
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#e6f4f1", "primaryBorderColor": "#0f7b6c", "primaryTextColor": "#0b3d36", "lineColor": "#0f7b6c", "tertiaryColor": "#ffffff"}}}%%
 erDiagram
+    direction LR
     COMPANIES ||--o{ BRANCHES : "has many"
     BRANCHES ||--o{ DEPARTMENTS : "has many"
     DEPARTMENTS ||--o{ EMPLOYEES : "has many"
     EMPLOYEES ||--o| EMPLOYEE_PROFILES : "has one"
-    EMPLOYEES ||--o{ EMPLOYEE_SKILL : "has"
-    SKILLS ||--o{ EMPLOYEE_SKILL : "used in"
+    EMPLOYEES ||--o{ EMPLOYEE_SKILL : "has skills"
+    SKILLS ||--o{ EMPLOYEE_SKILL : "belongs to"
 
     COMPANIES {
         bigint id PK
         varchar name UK
-        timestamp created_at
-        timestamp updated_at
     }
     BRANCHES {
         bigint id PK
-        bigint company_id FK "cascade on delete"
-        varchar name "unique per company"
+        bigint company_id FK "CASCADE"
+        varchar name
         varchar city "nullable"
-        timestamp created_at
-        timestamp updated_at
     }
     DEPARTMENTS {
         bigint id PK
-        bigint branch_id FK "cascade on delete"
-        varchar name "unique per branch, indexed"
-        timestamp created_at
-        timestamp updated_at
+        bigint branch_id FK "CASCADE"
+        varchar name
     }
     EMPLOYEES {
         bigint id PK
+        bigint department_id FK "RESTRICT"
         varchar first_name
-        varchar last_name "index (last_name, first_name)"
+        varchar last_name
         varchar email UK
-        bigint department_id FK "restrict on delete"
-        varchar department_legacy "old free text, kept"
         decimal salary
         date date_of_birth
-        timestamp deleted_at "soft delete, indexed"
-        timestamp created_at
-        timestamp updated_at
+        timestamp deleted_at "soft delete"
     }
     EMPLOYEE_PROFILES {
         bigint id PK
-        bigint employee_id FK,UK "cascade on delete"
+        bigint employee_id FK, UK "CASCADE"
         varchar phone "nullable"
         varchar address "nullable"
         date hire_date "nullable"
-        timestamp created_at
-        timestamp updated_at
+    }
+    EMPLOYEE_SKILL {
+        bigint employee_id PK, FK "CASCADE"
+        bigint skill_id PK, FK "CASCADE"
+        varchar level "pivot data"
     }
     SKILLS {
         bigint id PK
         varchar name UK
-        timestamp created_at
-        timestamp updated_at
-    }
-    EMPLOYEE_SKILL {
-        bigint employee_id PK,FK "cascade on delete"
-        bigint skill_id PK,FK "cascade on delete"
-        varchar level "pivot data, nullable"
-        timestamp created_at
-        timestamp updated_at
-    }
-    USERS {
-        bigint id PK
-        varchar name
-        varchar username UK
-        varchar email UK
-        varchar password "hashed"
-        varchar role "admin / hr / manager / viewer"
     }
 ```
 
-`USERS` (the people who log in) is separate from `EMPLOYEES` (the records being managed), so it has
-no relationship lines.
+### How to read it
+
+| Symbol | Meaning |
+|---|---|
+| `PK` / `FK` / `UK` | Primary key / foreign key / unique key |
+| `CASCADE` / `RESTRICT` on an FK | What the database does when the parent row is deleted: delete the children too / refuse the delete |
+| two short bars at one end | exactly **one** (e.g. an employee belongs to exactly one department) |
+| circle + crow's foot at the other end | **zero or many** (a department can have no employees or many) |
+| circle + one bar | **zero or one** (an employee has at most one profile) |
+
+To keep the picture readable, `created_at` / `updated_at` (on every table) and `employees.department_legacy` (the old text column, kept from before the migration) are not drawn.
+The **`users`** table (people who log in: `id`, `name`, `username` UK, `email` UK, `password` hashed, `role`) is separate from `employees` (the records being managed), so it has no relationship lines and is not drawn either.
 
 ## Relationships
 
