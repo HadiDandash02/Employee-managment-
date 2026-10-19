@@ -100,6 +100,7 @@ class Employee extends Model
         'email' => 'email',
         'department' => 'department_id', // sorted by the department's name, see scopeSortBy()
         'salary' => 'salary',
+        'hire_date' => 'hire_date', // on employee_profiles, see scopeSortBy()
         'date_of_birth' => 'date_of_birth',
         'added_on' => 'created_at',
     ];
@@ -128,7 +129,7 @@ class Employee extends Model
     }
 
     /**
-     * Apply the filter panel: department (id), salary range, date of birth range and "added on" range.
+     * Apply the filter panel: department (id), branch (id), salary range, date of birth range and "added on" range.
      * Empty or invalid values are ignored.
      */
     public function scopeFilter(Builder $query, array $filters): Builder
@@ -144,6 +145,7 @@ class Employee extends Model
 
         return $query
             ->when(ctype_digit($text('department_id')), fn ($q) => $q->where('department_id', (int) $text('department_id')))
+            ->when(ctype_digit($text('branch_id')), fn ($q) => $q->whereHas('department', fn ($d) => $d->where('branch_id', (int) $text('branch_id'))))
             ->when($number('salary_min') !== null, fn ($q) => $q->where('salary', '>=', $number('salary_min')))
             ->when($number('salary_max') !== null, fn ($q) => $q->where('salary', '<=', $number('salary_max')))
             ->when($date('born_from'), fn ($q, $d) => $q->whereDate('date_of_birth', '>=', $d))
@@ -165,6 +167,8 @@ class Employee extends Model
 
         if ($sort === 'department') {
             $query->orderBy(Department::select('name')->whereColumn('departments.id', 'employees.department_id'), $direction);
+        } elseif ($sort === 'hire_date') {
+            $query->orderBy(EmployeeProfile::select('hire_date')->whereColumn('employee_profiles.employee_id', 'employees.id'), $direction);
         } else {
             $query->orderBy(self::SORTABLE[$sort], $direction);
         }
