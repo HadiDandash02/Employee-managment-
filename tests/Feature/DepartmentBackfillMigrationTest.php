@@ -16,10 +16,21 @@ class DepartmentBackfillMigrationTest extends TestCase
 {
     use DatabaseMigrations;
 
+    /**
+     * How many migrations to roll back to get to just before the department_id migration
+     * (that one and every migration after it), so adding new migrations does not break this test.
+     */
+    private function migrationsSinceBackfill(): int
+    {
+        $files = array_map('basename', glob(database_path('migrations/*.php')));
+
+        return count(array_filter($files, fn ($file) => $file >= '2026_10_19_000005'));
+    }
+
     public function test_old_department_text_is_moved_into_the_foreign_key_and_kept(): void
     {
-        // Go back to before the department_id migration (rolls back 000005 … 000010).
-        Artisan::call('migrate:rollback', ['--step' => 6]);
+        // Go back to before the department_id migration.
+        Artisan::call('migrate:rollback', ['--step' => $this->migrationsSinceBackfill()]);
         $this->assertTrue(Schema::hasColumn('employees', 'department'));
         $this->assertFalse(Schema::hasColumn('employees', 'department_id'));
 
@@ -57,7 +68,7 @@ class DepartmentBackfillMigrationTest extends TestCase
 
     public function test_migration_can_be_rolled_back(): void
     {
-        Artisan::call('migrate:rollback', ['--step' => 6]);
+        Artisan::call('migrate:rollback', ['--step' => $this->migrationsSinceBackfill()]);
 
         $this->assertTrue(Schema::hasColumn('employees', 'department'));
         $this->assertFalse(Schema::hasColumn('employees', 'department_id'));
