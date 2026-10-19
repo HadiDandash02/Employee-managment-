@@ -59,13 +59,13 @@
                         <i class="bi bi-exclamation-octagon me-1"></i> Danger zone
                     </div>
                     <div class="card-body">
-                        <p class="small text-muted">Deleting an employee is permanent and cannot be undone.</p>
+                        <p class="small text-muted">The employee is moved to the trash. You can restore them from the Trash list on the Employees page.</p>
                         <form action="{{ route('employees.destroy', $employee) }}" method="POST"
-                              onsubmit="return confirm('Delete {{ addslashes($employee->full_name) }}? This cannot be undone.')">
+                              onsubmit="return confirm('Move {{ addslashes($employee->full_name) }} to the trash? You can restore them later.')">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn btn-outline-danger w-100">
-                                <i class="bi bi-trash me-1"></i> Delete employee
+                                <i class="bi bi-trash me-1"></i> Move to trash
                             </button>
                         </form>
                     </div>

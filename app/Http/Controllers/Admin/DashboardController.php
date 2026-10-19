@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Department;
 use App\Models\Employee;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -15,10 +16,13 @@ class DashboardController extends Controller
         $visibleRoles = $request->user()->manageableRoles();
         $users = User::whereIn('role', $visibleRoles)->orderByRaw("role = 'admin' desc")->orderBy('name')->get();
 
-        $departments = Employee::query()
-            ->selectRaw('department, COUNT(*) as total, AVG(salary) as average_salary')
-            ->groupBy('department')
-            ->orderByDesc('total')
+        // Through the hasMany relationship; soft-deleted employees are not counted.
+        $departments = Department::with('branch')
+            ->whereHas('employees')
+            ->withCount('employees')
+            ->withAvg('employees', 'salary')
+            ->orderByDesc('employees_count')
+            ->orderBy('name')
             ->get();
 
         return view('admin.dashboard', [
@@ -30,7 +34,7 @@ class DashboardController extends Controller
                 'users' => $users->count(),
             ],
             'departments' => $departments,
-            'recentEmployees' => Employee::latest()->orderByDesc('id')->limit(5)->get(),
+            'recentEmployees' => Employee::with('department')->latest()->orderByDesc('id')->limit(5)->get(),
             'users' => $users,
             'roles' => array_intersect_key(config('permissions.roles'), array_flip($visibleRoles)),
             'permissions' => config('permissions.permissions'),

@@ -59,20 +59,25 @@
 
         <div class="row g-3">
             <div class="col-md-6">
-                <label for="department" class="form-label">Department <span class="text-danger">*</span></label>
+                <label for="department_id" class="form-label">Department <span class="text-danger">*</span></label>
                 <div class="input-group has-validation">
                     <span class="input-group-text"><i class="bi bi-diagram-3"></i></span>
-                    <input type="text" id="department" name="department" list="department-options"
-                           value="{{ old('department', $employee->department) }}" maxlength="100" required
-                           class="form-control @error('department') is-invalid @enderror" placeholder="e.g. Engineering">
-                    @error('department') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    <select id="department_id" name="department_id" required
+                            class="form-select @error('department_id') is-invalid @enderror">
+                        <option value="">Choose a department</option>
+                        @foreach (($departments ?? collect())->groupBy('location') as $location => $group)
+                            <optgroup label="{{ $location }}">
+                                @foreach ($group as $department)
+                                    <option value="{{ $department->id }}" @selected((string) old('department_id', $employee->department_id) === (string) $department->id)>
+                                        {{ $department->name }}
+                                    </option>
+                                @endforeach
+                            </optgroup>
+                        @endforeach
+                    </select>
+                    @error('department_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
-                <datalist id="department-options">
-                    @foreach ($departments ?? [] as $department)
-                        <option value="{{ $department }}"></option>
-                    @endforeach
-                </datalist>
-                <div class="form-text">Pick an existing department or type a new one.</div>
+                <div class="form-text">Grouped by company · branch.</div>
             </div>
 
             <div class="col-md-6">
@@ -87,6 +92,53 @@
                 <div class="form-text" id="salary-hint"></div>
             </div>
         </div>
+
+        <hr class="my-4">
+
+        {{-- Saved in employee_profiles (Employee hasOne EmployeeProfile); all optional --}}
+        <div class="form-section-title mb-3"><i class="bi bi-telephone me-1"></i> Contact &amp; profile <span class="text-muted fw-normal text-lowercase">(optional)</span></div>
+
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label for="phone" class="form-label">Phone number</label>
+                <input type="tel" id="phone" name="phone" value="{{ old('phone', $employee->profile?->phone) }}" maxlength="30"
+                       class="form-control @error('phone') is-invalid @enderror" placeholder="+961 70 123 456">
+                @error('phone') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+            <div class="col-md-4">
+                <label for="hire_date" class="form-label">Hire date</label>
+                <input type="date" id="hire_date" name="hire_date" max="{{ now()->format('Y-m-d') }}"
+                       value="{{ old('hire_date', $employee->profile?->hire_date?->format('Y-m-d')) }}"
+                       class="form-control @error('hire_date') is-invalid @enderror">
+                @error('hire_date') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+            <div class="col-md-4">
+                <label for="address" class="form-label">Address</label>
+                <input type="text" id="address" name="address" value="{{ old('address', $employee->profile?->address) }}" maxlength="255"
+                       class="form-control @error('address') is-invalid @enderror" placeholder="Street, city">
+                @error('address') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+        </div>
+
+        <hr class="my-4">
+
+        {{-- Saved in the employee_skill pivot table (Employee belongsToMany Skill) --}}
+        <div class="form-section-title mb-3"><i class="bi bi-stars me-1"></i> Skills <span class="text-muted fw-normal text-lowercase">(optional)</span></div>
+
+        {{-- Always sent, so unticking every box removes all skills --}}
+        <input type="hidden" name="skills" value="">
+        @php($selectedSkills = collect(old('skills', $employee->exists ? $employee->skills->pluck('id')->all() : []))->map(fn ($id) => (int) $id))
+        <div class="d-flex flex-wrap gap-2 @error('skills') is-invalid @enderror @error('skills.*') is-invalid @enderror">
+            @forelse ($skills ?? [] as $skill)
+                <input type="checkbox" class="btn-check" name="skills[]" id="skill-{{ $skill->id }}" value="{{ $skill->id }}"
+                       autocomplete="off" @checked($selectedSkills->contains($skill->id))>
+                <label class="btn btn-sm btn-outline-primary rounded-pill" for="skill-{{ $skill->id }}">{{ $skill->name }}</label>
+            @empty
+                <span class="small text-muted">No skills yet. Run <code>php artisan db:seed --class=OrganizationSeeder</code> to add some.</span>
+            @endforelse
+        </div>
+        @error('skills') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+        @error('skills.*') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
     </div>
 
     <div class="card-footer bg-white d-flex flex-wrap align-items-center gap-2 p-3">

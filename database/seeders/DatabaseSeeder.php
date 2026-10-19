@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Department;
 use App\Models\Employee;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -25,6 +26,9 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        Employee::factory(30)->create();
+        $this->call(OrganizationSeeder::class);
+
+        // Spread the sample employees over the existing departments, each with a profile and skills.
+        Employee::factory(30)->recycle(Department::all())->withDetails()->create();
     }
 }

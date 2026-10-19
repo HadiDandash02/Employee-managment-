@@ -5,17 +5,21 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Employee extends Model
 {
     /** @use HasFactory<\Database\Factories\EmployeeFactory> */
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'first_name',
         'last_name',
         'email',
-        'department',
+        'department_id',
         'salary',
         'date_of_birth',
     ];
@@ -26,6 +30,30 @@ class Employee extends Model
             'date_of_birth' => 'date',
             'salary' => 'decimal:2',
         ];
+    }
+
+    /**
+     * Each employee belongs to one department (employees.department_id, restrict on delete).
+     */
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    /**
+     * One-to-one: extra contact/employment details in employee_profiles.
+     */
+    public function profile(): HasOne
+    {
+        return $this->hasOne(EmployeeProfile::class);
+    }
+
+    /**
+     * Many-to-many through the employee_skill pivot table, with the skill level on the pivot.
+     */
+    public function skills(): BelongsToMany
+    {
+        return $this->belongsToMany(Skill::class)->withPivot('level')->withTimestamps();
     }
 
     public function getFullNameAttribute(): string
@@ -60,7 +88,7 @@ class Employee extends Model
     {
         $colors = ['primary', 'success', 'info', 'warning', 'danger', 'secondary'];
 
-        return $colors[crc32(mb_strtolower((string) $this->department)) % count($colors)];
+        return $colors[crc32(mb_strtolower((string) $this->department?->name)) % count($colors)];
     }
 
     /**
@@ -70,14 +98,14 @@ class Employee extends Model
         'id' => 'id',
         'name' => 'first_name',
         'email' => 'email',
-        'department' => 'department',
+        'department' => 'department_id', // sorted by the department's name, see scopeSortBy()
         'salary' => 'salary',
         'date_of_birth' => 'date_of_birth',
         'added_on' => 'created_at',
     ];
 
     /**
-     * Filter employees by name, email or department.
+     * Filter employees by name, email or department name.
      *
      * Every word must match one of the columns, so "jane doe" or "doe sales" also work.
      */
@@ -92,7 +120,7 @@ class Employee extends Model
                 $q->where('first_name', 'like', $like)
                     ->orWhere('last_name', 'like', $like)
                     ->orWhere('email', 'like', $like)
-                    ->orWhere('department', 'like', $like);
+                    ->orWhereHas('department', fn (Builder $d) => $d->where('name', 'like', $like));
             });
         }
 
@@ -100,7 +128,7 @@ class Employee extends Model
     }
 
     /**
-     * Apply the filter panel: department, salary range, date of birth range and "added on" range.
+     * Apply the filter panel: department (id), salary range, date of birth range and "added on" range.
      * Empty or invalid values are ignored.
      */
     public function scopeFilter(Builder $query, array $filters): Builder
@@ -115,7 +143,7 @@ class Employee extends Model
         };
 
         return $query
-            ->when($text('department') !== '', fn ($q) => $q->where('department', $text('department')))
+            ->when(ctype_digit($text('department_id')), fn ($q) => $q->where('department_id', (int) $text('department_id')))
             ->when($number('salary_min') !== null, fn ($q) => $q->where('salary', '>=', $number('salary_min')))
             ->when($number('salary_max') !== null, fn ($q) => $q->where('salary', '<=', $number('salary_max')))
             ->when($date('born_from'), fn ($q, $d) => $q->whereDate('date_of_birth', '>=', $d))
@@ -134,7 +162,12 @@ class Employee extends Model
         }
 
         $direction = $direction === 'desc' ? 'desc' : 'asc';
-        $query->orderBy(self::SORTABLE[$sort], $direction);
+
+        if ($sort === 'department') {
+            $query->orderBy(Department::select('name')->whereColumn('departments.id', 'employees.department_id'), $direction);
+        } else {
+            $query->orderBy(self::SORTABLE[$sort], $direction);
+        }
 
         if ($sort === 'name') {
             $query->orderBy('last_name', $direction);

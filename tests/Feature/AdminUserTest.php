@@ -25,7 +25,7 @@ class AdminUserTest extends TestCase
 
     public function test_admin_dashboard_shows_stats_users_and_permissions(): void
     {
-        Employee::factory(3)->create(['department' => 'Sales']);
+        Employee::factory(3)->inDepartment('Sales')->create();
         User::factory()->create(['name' => 'Vera Viewer']);
 
         $this->get(route('admin.dashboard'))

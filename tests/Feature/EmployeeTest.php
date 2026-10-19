@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Department;
 use App\Models\Employee;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -24,7 +25,7 @@ class EmployeeTest extends TestCase
             'first_name' => 'Jane',
             'last_name' => 'Doe',
             'email' => 'jane@example.com',
-            'department' => 'Engineering',
+            'department_id' => Employee::factory()->inDepartment('Engineering')->make()->department_id,
             'salary' => '55000.50',
             'date_of_birth' => '1990-05-15',
         ], $overrides);
@@ -90,8 +91,8 @@ class EmployeeTest extends TestCase
 
     public function test_data_can_be_searched(): void
     {
-        Employee::factory()->create(['first_name' => 'Zelda', 'department' => 'Sales']);
-        Employee::factory()->create(['first_name' => 'Bob', 'department' => 'Finance']);
+        Employee::factory()->inDepartment('Sales')->create(['first_name' => 'Zelda']);
+        Employee::factory()->inDepartment('Finance')->create(['first_name' => 'Bob']);
 
         $response = $this->dataTable(['search' => ['value' => 'zeld']]);
         $response->assertJson(['recordsTotal' => 2, 'recordsFiltered' => 1]);
@@ -121,22 +122,23 @@ class EmployeeTest extends TestCase
 
     public function test_data_can_be_filtered(): void
     {
-        Employee::factory()->create(['first_name' => 'Ann', 'last_name' => 'X', 'department' => 'Sales', 'salary' => 40000, 'date_of_birth' => '1990-01-01']);
-        Employee::factory()->create(['first_name' => 'Ben', 'last_name' => 'X', 'department' => 'Sales', 'salary' => 80000, 'date_of_birth' => '1980-06-15']);
-        Employee::factory()->create(['first_name' => 'Cat', 'last_name' => 'X', 'department' => 'HR', 'salary' => 60000, 'date_of_birth' => '2000-03-10']);
+        Employee::factory()->inDepartment('Sales')->create(['first_name' => 'Ann', 'last_name' => 'X', 'salary' => 40000, 'date_of_birth' => '1990-01-01']);
+        Employee::factory()->inDepartment('Sales')->create(['first_name' => 'Ben', 'last_name' => 'X', 'salary' => 80000, 'date_of_birth' => '1980-06-15']);
+        Employee::factory()->inDepartment('HR')->create(['first_name' => 'Cat', 'last_name' => 'X', 'salary' => 60000, 'date_of_birth' => '2000-03-10']);
 
+        $sales = Department::where('name', 'Sales')->value('id');
         $names = fn (array $filters) => $this->names($this->dataTable(['filters' => $filters, 'order' => [['column' => 3, 'dir' => 'asc']]]));
 
-        $this->assertSame(['Ann X', 'Ben X'], $names(['department' => 'Sales']));
+        $this->assertSame(['Ann X', 'Ben X'], $names(['department_id' => $sales]));
         $this->assertSame(['Ben X', 'Cat X'], $names(['salary_min' => '50000']));
         $this->assertSame(['Ann X', 'Cat X'], $names(['salary_max' => '60000']));
         $this->assertSame(['Ann X', 'Cat X'], $names(['born_from' => '1985-01-01']));
         $this->assertSame(['Ben X'], $names(['born_to' => '1985-01-01']));
-        $this->assertSame(['Ann X'], $names(['department' => 'Sales', 'salary_max' => '50000']));
+        $this->assertSame(['Ann X'], $names(['department_id' => $sales, 'salary_max' => '50000']));
         $this->assertSame(['Ann X', 'Ben X', 'Cat X'], $names(['added_from' => now()->toDateString(), 'added_to' => now()->toDateString()]));
         $this->assertSame([], $names(['added_to' => now()->subDay()->toDateString()]));
 
-        $this->dataTable(['filters' => ['department' => 'Sales']])->assertJson(['recordsTotal' => 3, 'recordsFiltered' => 2]);
+        $this->dataTable(['filters' => ['department_id' => $sales]])->assertJson(['recordsTotal' => 3, 'recordsFiltered' => 2]);
     }
 
     public function test_invalid_filter_values_are_ignored(): void
@@ -147,17 +149,18 @@ class EmployeeTest extends TestCase
             'salary_min' => 'abc',
             'born_from' => '31/12/1990',
             'added_to' => '2024-02-30',
-            'department' => ['x'],
+            'department_id' => ['x'],
         ]])->assertOk()->assertJson(['recordsFiltered' => 3]);
     }
 
     public function test_index_lists_departments_for_the_filter(): void
     {
-        Employee::factory()->create(['department' => 'Marketing']);
+        $employee = Employee::factory()->inDepartment('Marketing')->create();
 
         $this->get(route('employees.index'))
             ->assertOk()
-            ->assertSee('<option value="Marketing">', false)
+            ->assertSee('<optgroup label="Test Company · Head Office">', false)
+            ->assertSee('<option value="'.$employee->department_id.'" >Marketing</option>', false)
             ->assertSee('Generate Report');
     }
 
@@ -185,10 +188,10 @@ class EmployeeTest extends TestCase
 
         $this->deleteJson(route('employees.bulk-destroy'), ['ids' => [$first->id, $second->id]])
             ->assertOk()
-            ->assertJson(['deleted' => 2, 'message' => '2 employees deleted successfully.']);
+            ->assertJson(['deleted' => 2, 'message' => '2 employees moved to the trash.']);
 
-        $this->assertModelMissing($first);
-        $this->assertModelMissing($second);
+        $this->assertSoftDeleted($first);
+        $this->assertSoftDeleted($second);
         $this->assertModelExists($kept);
     }
 
@@ -207,9 +210,9 @@ class EmployeeTest extends TestCase
 
         $this->deleteJson(route('employees.destroy', $employee))
             ->assertOk()
-            ->assertJson(['message' => 'Employee Jane Doe deleted successfully.']);
+            ->assertJson(['message' => 'Employee Jane Doe moved to the trash.']);
 
-        $this->assertModelMissing($employee);
+        $this->assertSoftDeleted($employee);
     }
 
     public function test_employee_can_be_created(): void
@@ -217,7 +220,10 @@ class EmployeeTest extends TestCase
         $this->post(route('employees.store'), $this->validData())
             ->assertRedirect(route('employees.index'));
 
-        $this->assertDatabaseHas('employees', ['email' => 'jane@example.com', 'department' => 'Engineering']);
+        $this->assertDatabaseHas('employees', [
+            'email' => 'jane@example.com',
+            'department_id' => Department::where('name', 'Engineering')->value('id'),
+        ]);
     }
 
     public function test_store_validates_input(): void
@@ -228,7 +234,7 @@ class EmployeeTest extends TestCase
             'email' => 'taken@example.com',
             'salary' => -5,
             'date_of_birth' => now()->addDay()->toDateString(),
-        ])->assertSessionHasErrors(['first_name', 'last_name', 'email', 'department', 'salary', 'date_of_birth']);
+        ])->assertSessionHasErrors(['first_name', 'last_name', 'email', 'department_id', 'salary', 'date_of_birth']);
 
         $this->assertDatabaseCount('employees', 1);
     }
@@ -243,9 +249,9 @@ class EmployeeTest extends TestCase
 
     public function test_show_page_lists_colleagues_and_department_average(): void
     {
-        $employee = Employee::factory()->create(['first_name' => 'Jane', 'department' => 'Sales', 'salary' => 60000]);
-        Employee::factory()->create(['first_name' => 'Colin', 'department' => 'Sales', 'salary' => 40000]);
-        Employee::factory()->create(['first_name' => 'Otto', 'department' => 'Finance']);
+        $employee = Employee::factory()->inDepartment('Sales')->create(['first_name' => 'Jane', 'salary' => 60000]);
+        Employee::factory()->inDepartment('Sales')->create(['first_name' => 'Colin', 'salary' => 40000]);
+        Employee::factory()->inDepartment('Finance')->create(['first_name' => 'Otto']);
 
         $this->get(route('employees.show', $employee))
             ->assertOk()
@@ -258,21 +264,22 @@ class EmployeeTest extends TestCase
 
     public function test_show_page_works_for_only_employee_in_department(): void
     {
-        $employee = Employee::factory()->create(['department' => 'Legal']);
+        $employee = Employee::factory()->inDepartment('Legal')->create();
 
         $this->get(route('employees.show', $employee))
             ->assertOk()
             ->assertSee('Only employee in this department');
     }
 
-    public function test_edit_page_suggests_existing_departments(): void
+    public function test_edit_page_lists_departments_with_current_selected(): void
     {
-        $employee = Employee::factory()->create(['department' => 'Engineering']);
-        Employee::factory()->create(['department' => 'Marketing']);
+        $employee = Employee::factory()->inDepartment('Engineering')->create();
+        $marketing = Employee::factory()->inDepartment('Marketing')->create()->department_id;
 
         $this->get(route('employees.edit', $employee))
             ->assertOk()
-            ->assertSee('<option value="Marketing">', false)
+            ->assertSee('<option value="'.$marketing.'" >', false)
+            ->assertSee('<option value="'.$employee->department_id.'" selected>', false)
             ->assertSee('Danger zone');
     }
 
@@ -294,6 +301,6 @@ class EmployeeTest extends TestCase
         $this->delete(route('employees.destroy', $employee))
             ->assertRedirect(route('employees.index'));
 
-        $this->assertModelMissing($employee);
+        $this->assertSoftDeleted($employee);
     }
 }

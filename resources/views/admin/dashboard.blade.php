@@ -116,17 +116,17 @@
                     <h2 class="panel-title">Departments</h2>
                 </div>
                 <div class="panel-body">
-                    @php $max = max(1, $departments->max('total')); @endphp
+                    @php $max = max(1, $departments->max('employees_count')); @endphp
                     @forelse ($departments as $department)
                         <div class="mb-3">
                             <div class="d-flex justify-content-between small mb-1">
-                                <a href="{{ route('employees.index', ['search' => $department->department]) }}" class="fw-semibold text-body text-decoration-none">
-                                    {{ $department->department }}
+                                <a href="{{ route('employees.index', ['filters' => ['department_id' => $department->id]]) }}" class="fw-semibold text-body text-decoration-none">
+                                    {{ $department->name }} <span class="text-muted fw-normal">· {{ $department->branch?->name }}</span>
                                 </a>
-                                <span class="text-muted">{{ $department->total }} · avg {{ number_format($department->average_salary, 0) }}</span>
+                                <span class="text-muted">{{ $department->employees_count }} · avg {{ number_format($department->employees_avg_salary, 0) }}</span>
                             </div>
-                            <div class="progress" style="height: 8px" role="progressbar" aria-label="{{ $department->department }}: {{ $department->total }} employees">
-                                <div class="progress-bar" style="width: {{ $department->total / $max * 100 }}%"></div>
+                            <div class="progress" style="height: 8px" role="progressbar" aria-label="{{ $department->name }}: {{ $department->employees_count }} employees">
+                                <div class="progress-bar" style="width: {{ $department->employees_count / $max * 100 }}%"></div>
                             </div>
                         </div>
                     @empty
@@ -151,7 +151,7 @@
                             @include('employees._avatar', ['size' => 32])
                             <div class="lh-sm me-auto">
                                 <div class="fw-semibold small">{{ $employee->full_name }}</div>
-                                <div class="small text-muted">{{ $employee->department }}</div>
+                                <div class="small text-muted">{{ $employee->department?->name }}</div>
                             </div>
                             <span class="small text-muted">{{ $employee->created_at?->diffForHumans() }}</span>
                         </a>

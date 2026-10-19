@@ -29,10 +29,14 @@
                 <div class="row g-3">
                     <div class="col-md-4">
                         <label for="f-department" class="form-label">Select department</label>
-                        <select id="f-department" name="department" class="form-select select-divider">
+                        <select id="f-department" name="department_id" class="form-select select-divider">
                             <option value="">Select department</option>
-                            @foreach ($departments as $department)
-                                <option value="{{ $department }}">{{ $department }}</option>
+                            @foreach ($departments->groupBy('location') as $location => $group)
+                                <optgroup label="{{ $location }}">
+                                    @foreach ($group as $department)
+                                        <option value="{{ $department->id }}" @selected((string) request('filters.department_id') === (string) $department->id)>{{ $department->name }}</option>
+                                    @endforeach
+                                </optgroup>
                             @endforeach
                         </select>
                     </div>
@@ -74,6 +78,17 @@
     <div class="panel table-panel">
         <div class="panel-header">
             <h2 class="panel-title">Employees</h2>
+            @can('employees.delete')
+                {{-- Soft deletes: switch between the normal list and the trash --}}
+                <div class="btn-group btn-group-sm ms-auto" role="group" aria-label="Show active employees or the trash">
+                    <input type="radio" class="btn-check" name="status" id="status-active" value="active" checked>
+                    <label class="btn btn-soft" for="status-active"><i class="bi bi-people me-1"></i>Active</label>
+                    <input type="radio" class="btn-check" name="status" id="status-trash" value="trash">
+                    <label class="btn btn-soft" for="status-trash">
+                        <i class="bi bi-trash3 me-1"></i>Trash <span class="badge rounded-pill text-bg-secondary ms-1" id="trash-count">{{ $trashCount }}</span>
+                    </label>
+                </div>
+            @endcan
             <button type="button" class="btn btn-soft d-inline-flex align-items-center gap-2" id="filters-toggle"
                     data-bs-toggle="collapse" data-bs-target="#filters-panel" aria-expanded="true" aria-controls="filters-panel">
                 <i class="bi bi-funnel"></i>
@@ -127,6 +142,7 @@
     const selectAllBox = () => document.getElementById('select-all');
     const filterForm = document.getElementById('filter-form');
     const initialSearch = @json($search);
+    let status = 'active'; // 'active' or 'trash' (soft-deleted employees)
     // What the logged-in user may do; the server checks this again on every request.
     const can = @json([
         'update' => auth()->user()->can('employees.update'),
@@ -177,7 +193,7 @@
         processing: true,
         ajax: {
             url: @json(route('employees.data')),
-            data: d => { d.filters = activeFilters(); },
+            data: d => { d.filters = activeFilters(); d.status = status; },
         },
         order: [],
         searchDelay: 300,
@@ -220,7 +236,9 @@
                 render: display((name, row) => `
                     <div class="d-flex align-items-center gap-2">
                         <span class="avatar text-bg-${row.avatar_color}" style="width:32px;height:32px;font-size:12px" aria-hidden="true">${esc(row.initials)}</span>
-                        <a href="${row.urls.show}" class="fw-semibold text-body text-decoration-none">${esc(name)}</a>
+                        ${row.deleted_at
+                            ? `<span class="fw-semibold text-muted">${esc(name)}</span>`
+                            : `<a href="${row.urls.show}" class="fw-semibold text-body text-decoration-none">${esc(name)}</a>`}
                     </div>`, name => name),
             },
             { data: 'email', name: 'email', className: 'export', render: display(email => esc(email), email => email) },
@@ -228,7 +246,8 @@
                 data: 'department', name: 'department', className: 'export',
                 render: display((department, row) => {
                     const c = row.department_color;
-                    return `<span class="badge rounded-pill bg-${c}-subtle text-${c}-emphasis border border-${c}-subtle fw-semibold">${esc(department)}</span>`;
+                    return `<span class="badge rounded-pill bg-${c}-subtle text-${c}-emphasis border border-${c}-subtle fw-semibold">${esc(department)}</span>`
+                        + (row.branch ? `<div class="small text-muted mt-1">${esc(row.branch)}</div>` : '');
                 }, department => department),
             },
             {
@@ -242,10 +261,13 @@
             { data: 'added_on', name: 'added_on', type: 'string', className: 'export tabular text-nowrap' },
             {
                 data: null, orderable: false, searchable: false, className: 'text-end text-nowrap col-actions',
-                render: display((data, row) => `
+                render: display((data, row) => row.deleted_at ? `
+                    <span class="small text-muted me-1" title="Deleted on">${esc(row.deleted_at)}</span>
+                    <button type="button" class="btn btn-sm btn-light btn-icon text-success js-restore" data-url="${row.urls.restore}" data-name="${esc(row.full_name)}" data-bs-toggle="tooltip" title="Restore" aria-label="Restore ${esc(row.full_name)}"><i class="bi bi-arrow-counterclockwise"></i></button>
+                    <button type="button" class="btn btn-sm btn-light btn-icon text-danger js-force" data-url="${row.urls.force}" data-name="${esc(row.full_name)}" data-bs-toggle="tooltip" title="Delete forever" aria-label="Delete ${esc(row.full_name)} forever"><i class="bi bi-x-octagon"></i></button>` : `
                     <a href="${row.urls.show}" class="btn btn-sm btn-light btn-icon" data-bs-toggle="tooltip" title="View" aria-label="View ${esc(row.full_name)}"><i class="bi bi-eye"></i></a>
                     ${can.update ? `<a href="${row.urls.edit}" class="btn btn-sm btn-light btn-icon text-primary" data-bs-toggle="tooltip" title="Edit" aria-label="Edit ${esc(row.full_name)}"><i class="bi bi-pencil-square"></i></a>` : ''}
-                    ${can.delete ? `<button type="button" class="btn btn-sm btn-light btn-icon text-danger js-delete" data-url="${row.urls.destroy}" data-name="${esc(row.full_name)}" data-bs-toggle="tooltip" title="Delete" aria-label="Delete ${esc(row.full_name)}"><i class="bi bi-trash"></i></button>` : ''}`,
+                    ${can.delete ? `<button type="button" class="btn btn-sm btn-light btn-icon text-danger js-delete" data-url="${row.urls.destroy}" data-name="${esc(row.full_name)}" data-bs-toggle="tooltip" title="Move to trash" aria-label="Move ${esc(row.full_name)} to the trash"><i class="bi bi-trash"></i></button>` : ''}`,
                     () => ''),
             },
         ],
@@ -285,6 +307,7 @@
             infoFiltered: '(filtered from _MAX_)',
             processing: '<div class="spinner-border spinner-border-sm text-primary me-2"></div> Loading…',
             zeroRecords: '<i class="bi bi-inbox fs-2 d-block mb-1 opacity-50"></i>No employees match your filters.',
+
             emptyTable: '<i class="bi bi-inbox fs-2 d-block mb-1 opacity-50"></i>No employees yet.',
         },
         preDrawCallback: () => tooltips('dispose'),
@@ -300,8 +323,21 @@
 
             tooltips('init');
             updateSelection();
+
+            const trashCount = document.getElementById('trash-count');
+            if (trashCount && api.ajax.json()) trashCount.textContent = api.ajax.json().trashTotal;
         },
     });
+
+    updateFilterCount(); // a department may be pre-selected from a link (?filters[department_id]=…)
+
+    // Active / Trash switch (soft deletes).
+    document.querySelectorAll('input[name="status"]').forEach(radio => radio.addEventListener('change', () => {
+        status = radio.value;
+        rowChecks().forEach(box => box.checked = false);
+        table.column(0).visible(can.delete && status === 'active');
+        table.ajax.reload();
+    }));
 
     table.on('dt-error', () => showAlert('Could not load employees. Please refresh the page and try again.', 'danger'));
 
@@ -373,7 +409,7 @@
     document.getElementById('bulk-delete').addEventListener('click', () => {
         const ids = selectedIds();
         const label = ids.length === 1 ? 'employee' : 'employees';
-        if (!ids.length || !confirm(`Delete ${ids.length} selected ${label}? This cannot be undone.`)) return;
+        if (!ids.length || !confirm(`Move ${ids.length} selected ${label} to the trash? You can restore them later.`)) return;
 
         send(@json(route('employees.bulk-destroy')), {
             method: 'DELETE',
@@ -388,9 +424,29 @@
         if (!button) return;
 
         bootstrap.Tooltip.getInstance(button)?.hide();
-        if (!confirm(`Delete ${button.dataset.name}? This cannot be undone.`)) return;
+        if (!confirm(`Move ${button.dataset.name} to the trash? You can restore them later.`)) return;
 
         const body = new FormData();
+        body.append('_method', 'DELETE');
+        send(button.dataset.url, { method: 'POST', body }, 'Could not delete the employee. Please refresh the page and try again.');
+    });
+
+    // Trash: restore, or delete forever.
+    tableEl.addEventListener('click', event => {
+        const restore = event.target.closest('.js-restore');
+        const force = event.target.closest('.js-force');
+        const button = restore || force;
+        if (!button) return;
+
+        bootstrap.Tooltip.getInstance(button)?.hide();
+        const body = new FormData();
+
+        if (restore) {
+            send(button.dataset.url, { method: 'POST', body }, 'Could not restore the employee. Please refresh the page and try again.');
+            return;
+        }
+
+        if (!confirm(`Delete ${button.dataset.name} forever? This cannot be undone.`)) return;
         body.append('_method', 'DELETE');
         send(button.dataset.url, { method: 'POST', body }, 'Could not delete the employee. Please refresh the page and try again.');
     });

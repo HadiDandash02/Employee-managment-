@@ -23,7 +23,7 @@
                 <h1 class="h3 mb-1">{{ $employee->full_name }}</h1>
                 <div class="d-flex flex-wrap gap-3 text-muted small">
                     <span><i class="bi bi-hash"></i>{{ $employee->id }}</span>
-                    <span><i class="bi bi-diagram-3 me-1"></i>{{ $employee->department }}</span>
+                    <span><i class="bi bi-diagram-3 me-1"></i>{{ $employee->department?->name }}</span>
                     <a href="mailto:{{ $employee->email }}" class="text-muted text-decoration-none">
                         <i class="bi bi-envelope me-1"></i>{{ $employee->email }}
                     </a>
@@ -37,7 +37,7 @@
                 @endcan
                 @can('employees.delete')
                     <form action="{{ route('employees.destroy', $employee) }}" method="POST"
-                          onsubmit="return confirm('Delete {{ addslashes($employee->full_name) }}? This cannot be undone.')">
+                          onsubmit="return confirm('Move {{ addslashes($employee->full_name) }} to the trash? You can restore them later.')">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="btn btn-outline-danger">
@@ -94,7 +94,7 @@
                 <div class="card-body">
                     <div class="info-label mb-1"><i class="bi bi-people me-1"></i> Department size</div>
                     <div class="fs-4 fw-semibold">{{ $departmentCount }}</div>
-                    <div class="small text-muted">{{ Str::plural('employee', $departmentCount) }} in {{ $employee->department }}</div>
+                    <div class="small text-muted">{{ Str::plural('employee', $departmentCount) }} in {{ $employee->department?->name }}</div>
                 </div>
             </div>
         </div>
@@ -139,14 +139,51 @@
                     <div class="row g-4">
                         <div class="col-sm-6">
                             <div class="info-label">Department</div>
-                            <a href="{{ route('employees.index', ['search' => $employee->department]) }}"
+                            <a href="{{ route('employees.index', ['filters' => ['department_id' => $employee->department_id]]) }}"
                                class="badge text-bg-light border text-decoration-none fs-6 fw-normal">
-                                {{ $employee->department }}
+                                {{ $employee->department?->name }}
                             </a>
                         </div>
                         <div class="col-sm-6">
                             <div class="info-label">Annual salary</div>
                             <div>{{ number_format($employee->salary, 2) }}</div>
+                        </div>
+                        {{-- department → branch → company (belongsTo chain) --}}
+                        <div class="col-sm-6">
+                            <div class="info-label">Branch</div>
+                            <div>{{ $employee->department?->branch?->name ?? '—' }}
+                                @if ($employee->department?->branch?->city)
+                                    <span class="text-muted">({{ $employee->department->branch->city }})</span>
+                                @endif
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="info-label">Company</div>
+                            <div>{{ $employee->department?->branch?->company?->name ?? '—' }}</div>
+                        </div>
+                        {{-- hasOne profile --}}
+                        <div class="col-sm-6">
+                            <div class="info-label">Hire date</div>
+                            <div>{{ $employee->profile?->hire_date?->format('d M Y') ?? '—' }}</div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="info-label">Phone</div>
+                            <div>{{ $employee->profile?->phone ?: '—' }}</div>
+                        </div>
+                        <div class="col-12">
+                            <div class="info-label">Address</div>
+                            <div>{{ $employee->profile?->address ?: '—' }}</div>
+                        </div>
+                        {{-- belongsToMany skills, with the level stored on the pivot table --}}
+                        <div class="col-12">
+                            <div class="info-label mb-1">Skills</div>
+                            @forelse ($employee->skills as $skill)
+                                <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis border border-primary-subtle fw-medium me-1 mb-1">
+                                    {{ $skill->name }}@if ($skill->pivot->level) <span class="opacity-75">· {{ $skill->pivot->level }}</span>@endif
+                                </span>
+                            @empty
+                                <span class="text-muted">—</span>
+                            @endforelse
                         </div>
                         @if ($hasPeers)
                             <div class="col-12">
@@ -162,7 +199,7 @@
                                     <div class="progress-bar" style="width: {{ $employee->salary / $max * 100 }}%"></div>
                                 </div>
                                 <div class="small d-flex justify-content-between mb-1">
-                                    <span>{{ $employee->department }} average</span><span>{{ number_format($departmentAverage, 2) }}</span>
+                                    <span>{{ $employee->department?->name }} average</span><span>{{ number_format($departmentAverage, 2) }}</span>
                                 </div>
                                 <div class="progress" style="height: 8px" role="progressbar" aria-label="Department average salary">
                                     <div class="progress-bar bg-secondary" style="width: {{ $departmentAverage / $max * 100 }}%"></div>
@@ -191,7 +228,7 @@
 
             <div class="card shadow-sm">
                 <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
-                    <span><i class="bi bi-people me-1"></i> Colleagues in {{ $employee->department }}</span>
+                    <span><i class="bi bi-people me-1"></i> Colleagues in {{ $employee->department?->name }}</span>
                     <span class="badge text-bg-secondary">{{ $departmentCount - 1 }}</span>
                 </div>
                 @if ($colleagues->isEmpty())
@@ -211,7 +248,7 @@
                     </div>
                     @if ($departmentCount - 1 > $colleagues->count())
                         <div class="card-footer bg-white text-center">
-                            <a href="{{ route('employees.index', ['search' => $employee->department]) }}" class="small">
+                            <a href="{{ route('employees.index', ['filters' => ['department_id' => $employee->department_id]]) }}" class="small">
                                 View all {{ $departmentCount - 1 }} colleagues
                             </a>
                         </div>
