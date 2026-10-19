@@ -67,7 +67,7 @@ class RelationshipsTest extends TestCase
         $employee = Employee::factory()->create();
 
         $this->expectException(QueryException::class); // restrictOnDelete
-        $employee->department->delete();
+        $employee->department->forceDelete(); // a real DELETE (delete() is now a soft delete)
     }
 
     public function test_department_still_blocked_by_employee_in_trash(): void
@@ -76,7 +76,7 @@ class RelationshipsTest extends TestCase
         $employee->delete(); // soft delete: the row (and its department_id) still exists
 
         $this->expectException(QueryException::class);
-        $employee->department->delete();
+        $employee->department->forceDelete(); // a real DELETE (delete() is now a soft delete)
     }
 
     public function test_deleting_a_company_cascades_to_branches_and_departments(): void

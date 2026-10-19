@@ -18,8 +18,8 @@ class DepartmentBackfillMigrationTest extends TestCase
 
     public function test_old_department_text_is_moved_into_the_foreign_key_and_kept(): void
     {
-        // Go back to before the department_id migration (rolls back 000005 … 000008).
-        Artisan::call('migrate:rollback', ['--step' => 4]);
+        // Go back to before the department_id migration (rolls back 000005 … 000009).
+        Artisan::call('migrate:rollback', ['--step' => 5]);
         $this->assertTrue(Schema::hasColumn('employees', 'department'));
         $this->assertFalse(Schema::hasColumn('employees', 'department_id'));
 
@@ -57,7 +57,7 @@ class DepartmentBackfillMigrationTest extends TestCase
 
     public function test_migration_can_be_rolled_back(): void
     {
-        Artisan::call('migrate:rollback', ['--step' => 4]);
+        Artisan::call('migrate:rollback', ['--step' => 5]);
 
         $this->assertTrue(Schema::hasColumn('employees', 'department'));
         $this->assertFalse(Schema::hasColumn('employees', 'department_id'));

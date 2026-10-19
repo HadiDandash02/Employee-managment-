@@ -35,7 +35,10 @@ class OrganizationSeeder extends Seeder
                 $branchModel = $company->branches()->firstOrCreate(['name' => $branchName], ['city' => $branch['city']]);
 
                 foreach ($branch['departments'] as $departmentName) {
-                    $branchModel->departments()->firstOrCreate(['name' => $departmentName]);
+                    // Code: first 3 letters + branch id, e.g. ENG-1 (unique because names are unique per branch).
+                    $code = strtoupper(substr($departmentName, 0, 3)).'-'.$branchModel->id;
+
+                    $branchModel->departments()->withTrashed()->firstOrCreate(['name' => $departmentName], ['code' => $code]);
                 }
             }
         }

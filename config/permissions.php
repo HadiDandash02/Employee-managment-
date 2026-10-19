@@ -30,6 +30,7 @@ return [
         'employees.update' => 'Edit employees',
         'employees.delete' => 'Delete employees',
         'users.manage' => 'Manage users',
+        'departments.manage' => 'Manage departments',
     ],
 
     'roles' => [
@@ -43,7 +44,7 @@ return [
         'hr' => [
             'label' => 'HR',
             'description' => 'Full access to employees and user management.',
-            'permissions' => ['employees.view', 'employees.create', 'employees.update', 'employees.delete', 'users.manage'],
+            'permissions' => ['employees.view', 'employees.create', 'employees.update', 'employees.delete', 'users.manage', 'departments.manage'],
             'manages' => ['hr', 'manager', 'viewer'],
             'panel' => ['label' => 'HR', 'icon' => 'bi-briefcase', 'slug' => 'hr'],
         ],

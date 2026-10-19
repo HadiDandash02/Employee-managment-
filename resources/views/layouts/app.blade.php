@@ -216,6 +216,11 @@
             <a href="{{ route('employees.index') }}" class="side-link {{ request()->routeIs('employees.*') ? 'active' : '' }}">
                 <i class="bi bi-people"></i> Manage Employees
             </a>
+            @can('departments.manage')
+                <a href="{{ route('admin.departments.index') }}" class="side-link {{ request()->routeIs('admin.departments.*') ? 'active' : '' }}">
+                    <i class="bi bi-diagram-3"></i> Manage Departments
+                </a>
+            @endcan
             @can('users.manage')
                 <a href="{{ route('admin.users.index') }}" class="side-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                     <i class="bi bi-person-badge"></i> Manage Users

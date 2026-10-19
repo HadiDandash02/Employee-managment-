@@ -4,6 +4,7 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Middleware\SetPanelPrefix;
 use Illuminate\Http\Request;
@@ -62,5 +63,14 @@ Route::middleware(['auth', 'auth.session', SetPanelPrefix::class])->group(functi
             Route::get('dashboard', DashboardController::class)->name('dashboard');
             Route::get('users/data', [UserController::class, 'data'])->name('users.data');
             Route::resource('users', UserController::class)->except(['show']);
+        });
+
+    // Manage Departments (Admin/HR): /admin/departments or /hr/departments.
+    Route::middleware('can:departments.manage')
+        ->prefix('{panel}')
+        ->where(['panel' => $panelSlugs])
+        ->name('admin.')
+        ->group(function () {
+            Route::resource('departments', DepartmentController::class)->except(['show']);
         });
 });
