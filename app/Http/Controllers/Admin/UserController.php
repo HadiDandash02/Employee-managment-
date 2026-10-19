@@ -84,6 +84,7 @@ class UserController extends Controller
                 'role_color' => $user->role_color,
                 'created_at' => $user->created_at?->format('Y-m-d'),
                 'employee' => $user->employee?->full_name,
+                'is_active' => $user->is_active,
                 'is_self' => $user->is($actor),
                 'can_delete' => ! $user->is($actor) && ! ($user->isAdmin() && $adminCount <= 1),
                 'urls' => [
@@ -127,6 +128,10 @@ class UserController extends Controller
         $this->ensureCanManage($request, $user);
 
         $data = $this->validated($request, $user);
+
+        if ($user->is($request->user()) && array_key_exists('is_active', $data) && ! $data['is_active']) {
+            throw ValidationException::withMessages(['is_active' => 'You cannot suspend your own account.']);
+        }
 
         if ($data['role'] !== $user->role) {
             if ($user->is($request->user())) {
@@ -196,6 +201,7 @@ class UserController extends Controller
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user)],
             'role' => ['required', Rule::in($request->user()->manageableRoles())],
             'password' => [$user ? 'nullable' : 'required', 'confirmed', Password::min(8)],
+            'is_active' => ['sometimes', 'boolean'],
             // The employee record this login belongs to: required for the Employee role, one login per employee.
             'employee_id' => [
                 Rule::requiredIf($request->input('role') === 'employee'), 'nullable', 'integer',
