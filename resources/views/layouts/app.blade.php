@@ -288,10 +288,15 @@
         </main>
     </div>
     @else
-    <main class="container">
-        @include('layouts._alerts')
-        @yield('content')
-    </main>
+        @hasSection('fullpage')
+            {{-- Full-screen guest page (the login page): it places the alerts itself --}}
+            @yield('content')
+        @else
+            <main class="container">
+                @include('layouts._alerts')
+                @yield('content')
+            </main>
+        @endif
     @endauth
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
