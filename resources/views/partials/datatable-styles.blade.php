@@ -50,6 +50,8 @@
     /* ... and the Actions column stays pinned on the right edge while scrolling */
     table.app-table th.col-actions, table.app-table td.col-actions { position: sticky; right: 0; width: 1%; }
     table.app-table thead th.col-actions { z-index: 3; }
+    /* While its ⋮ menu is open, lift the pinned cell above everything (e.g. the active page button, z-index 3) */
+    table.app-table td.col-actions:has(.dropdown-menu.show) { z-index: 1000; }
     table.app-table tbody td.col-actions {
         z-index: 2; background-color: #fff;
         box-shadow: inset 1px 0 0 #eef1f1, -8px 0 10px -8px rgba(16, 24, 40, .18);
