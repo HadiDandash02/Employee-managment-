@@ -84,22 +84,29 @@
                                         </span>
                                     </td>
                                     <td class="small text-muted text-nowrap">{{ $user->created_at?->format('Y-m-d') }}</td>
-                                    <td class="text-end pe-3 text-nowrap">
-                                        <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-light btn-icon text-primary"
-                                           data-bs-toggle="tooltip" title="Edit" aria-label="Edit {{ $user->name }}">
-                                            <i class="bi bi-pencil-square"></i>
-                                        </a>
-                                        @unless ($user->is(auth()->user()))
-                                            <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="d-inline"
-                                                  onsubmit="return confirm('Delete user {{ addslashes($user->name) }}?')">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-light btn-icon text-danger"
-                                                        data-bs-toggle="tooltip" title="Delete" aria-label="Delete {{ $user->name }}">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </form>
-                                        @endunless
+                                    <td class="text-end pe-3">
+                                        {{-- One "⋮" button; the actions open in a small menu --}}
+                                        <div class="dropdown actions-menu d-inline-block">
+                                            <button type="button" class="btn btn-sm btn-icon actions-toggle" data-bs-toggle="dropdown"
+                                                    aria-expanded="false" aria-label="Actions for {{ $user->name }}">
+                                                <i class="bi bi-three-dots-vertical"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li><a class="dropdown-item" href="{{ route('admin.users.edit', $user) }}"><i class="bi bi-pencil-square"></i> Edit</a></li>
+                                                <li><a class="dropdown-item" href="{{ route('admin.users.edit', $user) }}#set-password"><i class="bi bi-key"></i> Reset password</a></li>
+                                                @unless ($user->is(auth()->user()))
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li>
+                                                        <form action="{{ route('admin.users.destroy', $user) }}" method="POST"
+                                                              onsubmit="return confirm('Delete user {{ addslashes($user->name) }}?')">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="dropdown-item text-danger"><i class="bi bi-trash"></i> Delete</button>
+                                                        </form>
+                                                    </li>
+                                                @endunless
+                                            </ul>
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach

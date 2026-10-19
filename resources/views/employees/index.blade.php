@@ -260,14 +260,17 @@
             },
             { data: 'added_on', name: 'added_on', type: 'string', className: 'export tabular text-nowrap' },
             {
-                data: null, orderable: false, searchable: false, className: 'text-end text-nowrap col-actions',
-                render: display((data, row) => row.deleted_at ? `
-                    <span class="small text-muted me-1" title="Deleted on">${esc(row.deleted_at)}</span>
-                    <button type="button" class="btn btn-sm btn-light btn-icon text-success js-restore" data-url="${row.urls.restore}" data-name="${esc(row.full_name)}" data-bs-toggle="tooltip" title="Restore" aria-label="Restore ${esc(row.full_name)}"><i class="bi bi-arrow-counterclockwise"></i></button>
-                    <button type="button" class="btn btn-sm btn-light btn-icon text-danger js-force" data-url="${row.urls.force}" data-name="${esc(row.full_name)}" data-bs-toggle="tooltip" title="Delete forever" aria-label="Delete ${esc(row.full_name)} forever"><i class="bi bi-x-octagon"></i></button>` : `
-                    <a href="${row.urls.show}" class="btn btn-sm btn-light btn-icon" data-bs-toggle="tooltip" title="View" aria-label="View ${esc(row.full_name)}"><i class="bi bi-eye"></i></a>
-                    ${can.update ? `<a href="${row.urls.edit}" class="btn btn-sm btn-light btn-icon text-primary" data-bs-toggle="tooltip" title="Edit" aria-label="Edit ${esc(row.full_name)}"><i class="bi bi-pencil-square"></i></a>` : ''}
-                    ${can.delete ? `<button type="button" class="btn btn-sm btn-light btn-icon text-danger js-delete" data-url="${row.urls.destroy}" data-name="${esc(row.full_name)}" data-bs-toggle="tooltip" title="Move to trash" aria-label="Move ${esc(row.full_name)} to the trash"><i class="bi bi-trash"></i></button>` : ''}`,
+                data: null, orderable: false, searchable: false, className: 'text-end col-actions',
+                // One "⋮" button per row; the actions open in a small menu.
+                render: display((data, row) => actionsMenu(row.full_name, row.deleted_at
+                    ? `<li><h6 class="dropdown-header">Deleted ${esc(row.deleted_at)}</h6></li>
+                       <li><button type="button" class="dropdown-item js-restore" data-url="${row.urls.restore}" data-name="${esc(row.full_name)}"><i class="bi bi-arrow-counterclockwise text-success"></i> Restore</button></li>
+                       <li><hr class="dropdown-divider"></li>
+                       <li><button type="button" class="dropdown-item text-danger js-force" data-url="${row.urls.force}" data-name="${esc(row.full_name)}"><i class="bi bi-x-octagon"></i> Delete forever</button></li>`
+                    : `<li><a class="dropdown-item" href="${row.urls.show}"><i class="bi bi-eye"></i> View</a></li>
+                       ${can.update ? `<li><a class="dropdown-item" href="${row.urls.edit}"><i class="bi bi-pencil-square"></i> Edit</a></li>` : ''}
+                       ${can.delete ? `<li><hr class="dropdown-divider"></li>
+                       <li><button type="button" class="dropdown-item text-danger js-delete" data-url="${row.urls.destroy}" data-name="${esc(row.full_name)}"><i class="bi bi-trash"></i> Delete</button></li>` : ''}`),
                     () => ''),
             },
         ],

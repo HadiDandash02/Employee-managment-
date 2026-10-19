@@ -178,6 +178,15 @@
         .btn-soft:hover, .btn-soft:focus, .btn-soft.show { background: #f3f6f6; border-color: #cfd8d8; color: #111; }
 
         .btn-icon { width: 2rem; height: 2rem; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+        /* Row actions: one "⋮" button that opens View / Edit / Delete */
+        .actions-toggle { color: #4b5563; border-radius: 50%; }
+        .actions-toggle:hover, .actions-toggle[aria-expanded="true"] { background: var(--brand-light); color: var(--brand); }
+        .actions-menu .dropdown-menu { min-width: 11rem; padding: .35rem; border: 1px solid #e3e8e8; border-radius: .6rem; box-shadow: 0 8px 24px rgba(16, 24, 40, .12); }
+        .actions-menu .dropdown-item { display: flex; align-items: center; gap: .6rem; font-size: .82rem; padding: .45rem .7rem; border-radius: .4rem; }
+        .actions-menu .dropdown-item i { width: 1rem; text-align: center; }
+        .actions-menu .dropdown-item:active { background: var(--brand-light); color: var(--brand); }
+        .actions-menu .dropdown-item.text-danger:hover { background: #fff1f3; }
+        .actions-menu .dropdown-header { font-size: .7rem; padding: .35rem .7rem; }
         .tabular { font-variant-numeric: tabular-nums; }
         .avatar { display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: 600; flex-shrink: 0; }
         .info-label { font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; color: var(--bs-secondary-color); }
@@ -306,6 +315,22 @@
         })();
     </script>
     @endauth
+    <script>
+        /**
+         * "⋮" row-actions menu used by the DataTables (employees, users).
+         * The menu is positioned "fixed" so it is never cut off by the table's sideways scroll.
+         */
+        window.actionsMenu = (name, items) => {
+            const label = String(name ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+            return `<div class="dropdown actions-menu d-inline-block">
+                <button type="button" class="btn btn-sm btn-icon actions-toggle" data-bs-toggle="dropdown"
+                        data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" aria-label="Actions for ${label}">
+                    <i class="bi bi-three-dots-vertical"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">${items}</ul>
+            </div>`;
+        };
+    </script>
     @stack('scripts')
 </body>
 </html>

@@ -168,9 +168,12 @@
             },
             {
                 data: null, orderable: false, searchable: false, className: 'text-end col-actions',
-                render: (data, type, row) => `
-                    <a href="${row.urls.edit}" class="btn btn-sm btn-light btn-icon text-primary" data-bs-toggle="tooltip" title="Edit" aria-label="Edit ${esc(row.name)}"><i class="bi bi-pencil-square"></i></a>
-                    ${row.can_delete ? `<button type="button" class="btn btn-sm btn-light btn-icon text-danger js-delete" data-url="${row.urls.destroy}" data-name="${esc(row.name)}" data-bs-toggle="tooltip" title="Delete" aria-label="Delete ${esc(row.name)}"><i class="bi bi-trash"></i></button>` : ''}`,
+                // One "⋮" button per row; the actions open in a small menu.
+                render: (data, type, row) => actionsMenu(row.name, `
+                    <li><a class="dropdown-item" href="${row.urls.edit}"><i class="bi bi-pencil-square"></i> Edit</a></li>
+                    <li><a class="dropdown-item" href="${row.urls.password}"><i class="bi bi-key"></i> Reset password</a></li>
+                    ${row.can_delete ? `<li><hr class="dropdown-divider"></li>
+                    <li><button type="button" class="dropdown-item text-danger js-delete" data-url="${row.urls.destroy}" data-name="${esc(row.name)}"><i class="bi bi-trash"></i> Delete</button></li>` : ''}`),
             },
         ],
         layout: {
