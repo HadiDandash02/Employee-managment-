@@ -1,59 +1,83 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Employee Management System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A Laravel 12 application for managing employee records, departments and user access, with
+role-based permissions (Admin, HR, Manager, Employee).
 
-## About Laravel
+## Features
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **Manage Employees** — DataTables list (search, sort, filters, export, pagination), add / edit / view,
+  soft delete with a Trash (restore, delete forever, empty trash).
+- **Manage Departments** — CRUD with code, branch and employee count (Admin, HR).
+- **Manage Users** — logins, roles, linked employee, suspend / reactivate (Admin, HR).
+- **Employee self-service** — Employee Dashboard and My Profile for the Employee role.
+- **Organization** — companies → branches → departments → employees, plus profiles and skills.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Roles
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+| Role | Can do | Starts on |
+|---|---|---|
+| Admin | Everything, all users | `/admin/dashboard` |
+| HR | Same as Admin, but never sees Admin accounts | `/hr/dashboard` |
+| Manager | View, add and edit employees | `/employees` |
+| Employee | Only their own record (needs a linked employee) | `/employee/dashboard` |
 
-## Learning Laravel
+Roles and permissions are defined in [`config/permissions.php`](config/permissions.php).
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## Project structure
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+The code is organized **by area** — the same area name is used for controllers, views and tests:
 
-## Laravel Sponsors
+| Area | Who | Controllers | Views | Tests |
+|---|---|---|---|---|
+| Auth | logged-out visitors | `app/Http/Controllers/Auth/` | `resources/views/auth/` | `tests/Feature/Auth/` |
+| Account | every logged-in user | `app/Http/Controllers/Account/` | `resources/views/account/` | `tests/Feature/Account/` |
+| Staff | Admin, HR, Manager | `app/Http/Controllers/Staff/` | `resources/views/staff/` | `tests/Feature/Staff/` |
+| Admin | Admin, HR | `app/Http/Controllers/Admin/` | `resources/views/admin/` | `tests/Feature/Admin/` |
+| Employee | Employee role | `app/Http/Controllers/Employee/` | `resources/views/employee/` | `tests/Feature/Employee/` |
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+More detail: [`app/Http/Controllers/README.md`](app/Http/Controllers/README.md).
 
-### Premium Partners
+Other important folders:
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+| Folder | Contents |
+|---|---|
+| `routes/web.php` | Every URL, with the middleware that protects it |
+| `app/Http/Middleware/` | `CheckEmployeeStatus` (suspended → 403), `SetPanelPrefix` (`/admin` vs `/hr`) |
+| `app/Http/Requests/` | Form Request validation, by area (`Staff/`, `Admin/`) |
+| `app/Services/` | Business logic, by area (`Employee/DashboardService`) |
+| `app/Models/` | Eloquent models and relationships (shared by all areas) |
+| `app/Providers/AppServiceProvider.php` | Turns each permission into a Gate |
+| `database/migrations/` | Database structure; `database/factories/` and `database/seeders/` for test/sample data |
+| `resources/views/layouts/`, `resources/views/partials/` | Page frame (sidebar, top bar) and shared pieces |
+| `tests/Feature/Database/` | Relationship and migration tests |
+| `docs/` | ER diagram (`er-diagram.svg`) and theory notes |
 
-## Contributing
+## Request flow
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```
+Browser → public/index.php → bootstrap/app.php → routes/web.php
+        → middleware (auth, can:…, active) → Form Request (validation)
+        → Controller → Service / Model → MySQL
+        → Blade view (or JSON for the tables) → Browser
+```
 
-## Code of Conduct
+## Setup
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+composer install
+cp .env.example .env          # set DB_DATABASE, DB_PORT (3307 on XAMPP here), DB_USERNAME, DB_PASSWORD
+php artisan key:generate
+php artisan migrate --seed    # tables + admin user + sample organization and employees
+php artisan serve             # or open it through XAMPP Apache
+```
 
-## Security Vulnerabilities
+Log in with username **`admin`** and the password from `ADMIN_PASSWORD` in `.env` (default `Admin@12345`),
+then change it under *profile → My account & password*.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Tests
 
-## License
+```bash
+php artisan test
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Feature tests run against an in-memory SQLite database (see `phpunit.xml`), so they never touch your data.
