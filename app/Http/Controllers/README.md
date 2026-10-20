@@ -9,6 +9,7 @@ tests live in folders with the **same area name**, so you can find everything fo
 | **Account** | Every logged-in user | `/account` | `Account/AccountController` (change own password) | `resources/views/account/` | `tests/Feature/Account/` |
 | **Staff** | Admin, HR, Manager | `/employees` | `Staff/EmployeeController` (Manage Employees: list, filters, CRUD, trash) | `resources/views/staff/employees/` | `tests/Feature/Staff/` |
 | **Admin** | Admin and HR (the management panel) | `/admin` for Admin, `/hr` for HR | `Admin/DashboardController`, `Admin/UserController` (Manage Users), `Admin/DepartmentController` (Manage Departments) | `resources/views/admin/` | `tests/Feature/Admin/` |
+| **Leave** | Every role: Employees request, Managers (own department) and HR approve/reject | `/leave-requests` | `Leave/LeaveRequestController` (thin: calls `LeaveRequestService`) | `resources/views/leave/` | `tests/Feature/Leave/` |
 | **Employee** | Employee role (self-service) | `/employee/dashboard`, `/my-profile` | `Employee/DashboardController`, `Employee/ProfileController` | `resources/views/employee/` | `tests/Feature/Employee/` |
 
 `Controller.php` (in this folder) is Laravel's base class that every controller extends.
@@ -26,7 +27,9 @@ Access is **not** checked inside the controllers; the routes do it with middlewa
 ## Related folders (same area names)
 
 - **Form Requests (validation):** `app/Http/Requests/Staff/` (employees), `app/Http/Requests/Admin/` (departments).
-- **Services (business logic):** `app/Services/Employee/DashboardService.php`.
+- **Services (business logic):** `app/Services/Employee/DashboardService.php`, `app/Services/Leave/LeaveRequestService.php`
+  (business rules + `DB::transaction`; a broken rule throws `App\Exceptions\BusinessRuleException`).
+- **Enums (fixed lists of values):** `app/Enums/LeaveStatus.php`, `app/Enums/LeaveAction.php`.
 - **Models** are shared by all areas: `app/Models/`.
 - **Shared views:** `resources/views/layouts/` (page frame, sidebar, top bar) and `resources/views/partials/`
   (avatar, table styles).

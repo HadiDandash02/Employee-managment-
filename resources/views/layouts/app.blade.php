@@ -228,6 +228,18 @@
                     <i class="bi bi-person-vcard"></i> My Profile
                 </a>
             @endif
+            @can('viewAny', App\Models\LeaveRequest::class)
+                <a href="{{ route('leave-requests.index') }}" class="side-link {{ request()->routeIs('leave-requests.*') ? 'active' : '' }}">
+                    <i class="bi bi-calendar-check"></i> Leave Requests
+                    @can('leave.approve')
+                        {{-- Pending requests this user could review (their own are not counted) --}}
+                        @php($toReview = App\Models\LeaveRequest::visibleTo($me)->where('status', App\Enums\LeaveStatus::Pending)->where('employee_id', '!=', $me->employee_id ?? 0)->count())
+                        @if ($toReview)
+                            <span class="badge rounded-pill text-bg-warning ms-auto">{{ $toReview }}</span>
+                        @endif
+                    @endcan
+                </a>
+            @endcan
             @can('employees.view')
                 <a href="{{ route('employees.index') }}" class="side-link {{ request()->routeIs('employees.*') ? 'active' : '' }}">
                     <i class="bi bi-people"></i> Manage Employees

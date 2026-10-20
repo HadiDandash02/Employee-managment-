@@ -36,6 +36,9 @@ return [
         'departments.manage' => 'Manage departments',
         'profile.view-own' => 'See own employee profile',
         'profile.update-own' => 'Edit own contact info (phone, address)',
+        // Leave requests (LeaveRequestPolicy): a Manager approves only their own department.
+        'leave.request' => 'Request leave (for themselves)',
+        'leave.approve' => 'Approve or reject leave requests',
     ],
 
     'roles' => [
@@ -49,21 +52,21 @@ return [
         'hr' => [
             'label' => 'HR',
             'description' => 'Full access to employees and user management.',
-            'permissions' => ['employees.view', 'employees.view-all', 'employees.view-team', 'employees.create', 'employees.update', 'employees.delete', 'users.manage', 'departments.manage', 'profile.view-own', 'profile.update-own'],
+            'permissions' => ['employees.view', 'employees.view-all', 'employees.view-team', 'employees.create', 'employees.update', 'employees.delete', 'users.manage', 'departments.manage', 'profile.view-own', 'profile.update-own', 'leave.request', 'leave.approve'],
             'manages' => ['hr', 'manager', 'employee'],
             'panel' => ['label' => 'HR', 'icon' => 'bi-briefcase', 'slug' => 'hr'],
         ],
         'manager' => [
             'label' => 'Manager',
-            'description' => 'Can view the employees of their own department.',
-            'permissions' => ['employees.view', 'employees.view-team', 'profile.view-own', 'profile.update-own'],
+            'description' => 'Can view the employees of their own department and approve their leave.',
+            'permissions' => ['employees.view', 'employees.view-team', 'profile.view-own', 'profile.update-own', 'leave.request', 'leave.approve'],
             'manages' => [],
         ],
         // A login for one employee (users.employee_id): sees only their own profile.
         'employee' => [
             'label' => 'Employee',
-            'description' => 'Can only see their own profile.',
-            'permissions' => ['profile.view-own', 'profile.update-own'],
+            'description' => 'Can see their own profile and request leave.',
+            'permissions' => ['profile.view-own', 'profile.update-own', 'leave.request'],
             'manages' => [],
         ],
     ],

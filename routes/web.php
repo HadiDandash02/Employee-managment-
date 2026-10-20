@@ -7,9 +7,11 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Employee\DashboardController as EmployeeDashboardController;
 use App\Http\Controllers\Employee\ProfileController as EmployeeProfileController;
+use App\Http\Controllers\Leave\LeaveRequestController;
 use App\Http\Controllers\Staff\EmployeeController;
 use App\Http\Middleware\SetPanelPrefix;
 use App\Models\Employee;
+use App\Models\LeaveRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -48,6 +50,18 @@ Route::middleware([...$loggedIn, 'can:profile.view-own', 'active'])->group(funct
     Route::get('/my-profile', [EmployeeProfileController::class, 'show'])->name('profile.show');
     Route::get('/my-profile/edit', [EmployeeProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/my-profile', [EmployeeProfileController::class, 'update'])->name('profile.update');
+});
+
+// Leave Requests (every role, LeaveRequestPolicy)
+// Employee: ask for leave and follow it. Manager: approve/reject their department. HR: everyone.
+// The business rules (not your own, only pending, …) are in App\Services\Leave\LeaveRequestService.
+Route::middleware([...$loggedIn, 'active'])->group(function () {
+    Route::get('/leave-requests', [LeaveRequestController::class, 'index'])->can('viewAny', LeaveRequest::class)->name('leave-requests.index');
+    Route::get('/leave-requests/create', [LeaveRequestController::class, 'create'])->can('create', LeaveRequest::class)->name('leave-requests.create');
+    Route::post('/leave-requests', [LeaveRequestController::class, 'store'])->can('create', LeaveRequest::class)->name('leave-requests.store');
+    Route::get('/leave-requests/{leaveRequest}', [LeaveRequestController::class, 'show'])->can('view', 'leaveRequest')->name('leave-requests.show');
+    Route::post('/leave-requests/{leaveRequest}/approve', [LeaveRequestController::class, 'approve'])->can('approve', 'leaveRequest')->name('leave-requests.approve');
+    Route::post('/leave-requests/{leaveRequest}/reject', [LeaveRequestController::class, 'reject'])->can('approve', 'leaveRequest')->name('leave-requests.reject');
 });
 
 // Staff Routes: Manage Employees (Admin, HR, Manager)
