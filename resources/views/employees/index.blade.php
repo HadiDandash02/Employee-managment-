@@ -208,6 +208,16 @@
         action === 'init' ? bootstrap.Tooltip.getOrCreateInstance(el) : bootstrap.Tooltip.getInstance(el)?.dispose()
     );
 
+    // "🔑 @username" under the name when this employee has a login (users.employee_id).
+    const loginBadge = login => {
+        if (!login) return '';
+        const text = `<i class="bi bi-key me-1"></i>@${esc(login.username)}`;
+        const badge = login.edit_url
+            ? `<a href="${login.edit_url}" class="text-decoration-none" title="Edit this login">${text}</a>`
+            : `<span title="Has a login">${text}</span>`;
+        return `<div class="small text-primary mt-1 ms-5 ps-1">${badge}${login.is_active ? '' : ' <span class="badge text-bg-danger fw-normal ms-1">Suspended</span>'}</div>`;
+    };
+
     // HTML for the screen, plain text for export / print.
     const display = (html, plain) => (data, type, row, meta) => type === 'display' ? html(data, row, meta) : plain(data, row, meta);
     const exportOptions = { columns: '.export', orthogonal: 'export' };
@@ -267,7 +277,8 @@
                         ${row.deleted_at
                             ? `<span class="fw-semibold text-muted">${esc(name)}</span>`
                             : `<a href="${row.urls.show}" class="fw-semibold text-body text-decoration-none">${esc(name)}</a>`}
-                    </div>`, name => name),
+                    </div>
+                    ${loginBadge(row.login)}`, name => name),
             },
             { data: 'email', name: 'email', className: 'export', render: display(email => esc(email), email => email) },
             {

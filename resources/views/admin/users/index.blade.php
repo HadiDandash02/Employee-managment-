@@ -150,7 +150,7 @@
                         <div class="lh-sm">
                             <div class="fw-semibold">${esc(name)}${row.is_self ? ' <span class="badge text-bg-light border fw-normal ms-1">You</span>' : ''}${row.is_active ? '' : ' <span class="badge text-bg-danger fw-normal ms-1">Suspended</span>'}</div>
                             <div class="small text-muted">@${esc(row.username)} · ${esc(row.email)}</div>
-                            ${row.employee ? `<div class="small text-primary"><i class="bi bi-person-vcard me-1"></i>${esc(row.employee)}</div>` : ""}
+                            ${row.employee ? `<div class="small text-primary"><i class="bi bi-person-vcard me-1"></i>${row.employee_url ? `<a href="${row.employee_url}" class="text-decoration-none" title="Open this employee">${esc(row.employee)}</a>` : esc(row.employee)}</div>` : ""}
                         </div>
                     </div>`,
             },

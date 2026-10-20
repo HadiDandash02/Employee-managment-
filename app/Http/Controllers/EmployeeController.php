@@ -62,7 +62,7 @@ class EmployeeController extends Controller
 
         $base = $trash ? Employee::onlyTrashed() : Employee::query();
         $filters = is_array($request->query('filters')) ? $request->query('filters') : [];
-        $query = (clone $base)->with(['department.branch', 'profile'])->search($search)->filter($filters)->sortBy($sort, $direction);
+        $query = (clone $base)->with(['department.branch', 'profile', 'user'])->search($search)->filter($filters)->sortBy($sort, $direction);
         $filtered = (clone $query)->count();
 
         if ($length !== -1) {
@@ -91,6 +91,12 @@ class EmployeeController extends Controller
                 'hire_date' => $employee->profile?->hire_date?->format('Y-m-d'),
                 'added_on' => $employee->created_at?->format('Y-m-d H:i:s'),
                 'deleted_at' => $employee->deleted_at?->format('Y-m-d H:i'),
+                // The login linked to this employee (users.employee_id), if any.
+                'login' => $employee->user ? [
+                    'username' => $employee->user->username,
+                    'is_active' => $employee->user->is_active,
+                    'edit_url' => $request->user()->can('manage-user', $employee->user) ? route('admin.users.edit', $employee->user) : null,
+                ] : null,
                 'urls' => $employee->trashed()
                     ? [
                         'restore' => route('employees.restore', $employee),
@@ -129,7 +135,7 @@ class EmployeeController extends Controller
 
     public function show(Employee $employee)
     {
-        $employee->load(['department.branch.company', 'profile', 'skills']);
+        $employee->load(['department.branch.company', 'profile', 'skills', 'user']);
 
         $sameDepartment = Employee::where('department_id', $employee->department_id);
 

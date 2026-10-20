@@ -223,6 +223,26 @@
                         <span class="text-muted">Last updated</span>
                         <span title="{{ $employee->updated_at }}">{{ $employee->updated_at?->diffForHumans() ?? '—' }}</span>
                     </li>
+                    {{-- The login linked to this employee (users.employee_id) --}}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Login account</span>
+                        @if ($employee->user)
+                            <span>
+                                @can('manage-user', $employee->user)
+                                    <a href="{{ route('admin.users.edit', $employee->user) }}" class="text-decoration-none">
+                                        <i class="bi bi-key me-1"></i>{{ '@'.$employee->user->username }}
+                                    </a>
+                                @else
+                                    <i class="bi bi-key me-1"></i>{{ '@'.$employee->user->username }}
+                                @endcan
+                                @unless ($employee->user->is_active)
+                                    <span class="badge text-bg-danger fw-normal ms-1">Suspended</span>
+                                @endunless
+                            </span>
+                        @else
+                            <span class="text-muted">No login</span>
+                        @endif
+                    </li>
                 </ul>
             </div>
 

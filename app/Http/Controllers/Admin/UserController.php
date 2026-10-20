@@ -84,6 +84,7 @@ class UserController extends Controller
                 'role_color' => $user->role_color,
                 'created_at' => $user->created_at?->format('Y-m-d'),
                 'employee' => $user->employee?->full_name,
+                'employee_url' => $user->employee && $actor->can('employees.view') ? route('employees.show', $user->employee) : null,
                 'is_active' => $user->is_active,
                 'is_self' => $user->is($actor),
                 'can_delete' => ! $user->is($actor) && ! ($user->isAdmin() && $adminCount <= 1),

@@ -128,6 +128,48 @@ class EmployeeRoleTest extends TestCase
         $this->assertStringNotContainsString('My Profile', $sidebar($unlinked));
     }
 
+    public function test_the_link_is_shown_in_manage_employees_manage_users_and_the_profile(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+        $employee = Employee::factory()->create(['first_name' => 'Ali', 'last_name' => 'Alameh']);
+        $user = User::factory()->create(['username' => 'hashemali27', 'employee_id' => $employee->id, 'is_active' => false]);
+
+        // Manage Employees: the employee row knows its login
+        $row = collect($this->getJson(route('employees.data'))->json('data'))->firstWhere('id', $employee->id);
+        $this->assertSame('hashemali27', $row['login']['username']);
+        $this->assertFalse($row['login']['is_active']);
+        $this->assertSame(route('admin.users.edit', $user), $row['login']['edit_url']);
+
+        // Manage Users: the user row links to the employee
+        $userRow = collect($this->getJson(route('admin.users.data'))->json('data'))->firstWhere('id', $user->id);
+        $this->assertSame('Ali Alameh', $userRow['employee']);
+        $this->assertSame(route('employees.show', $employee), $userRow['employee_url']);
+
+        // Employee profile: "Login account"
+        $this->get(route('employees.show', $employee))->assertSee('Login account')->assertSee('@hashemali27')->assertSee('Suspended');
+    }
+
+    public function test_hr_sees_an_admins_login_but_gets_no_edit_link(): void
+    {
+        $employee = Employee::factory()->create();
+        User::factory()->admin()->create(['username' => 'boss', 'employee_id' => $employee->id]);
+        $this->actingAs(User::factory()->hr()->create());
+
+        $row = collect($this->getJson(route('employees.data'))->json('data'))->firstWhere('id', $employee->id);
+        $this->assertSame('boss', $row['login']['username']);
+        $this->assertNull($row['login']['edit_url']); // HR may not manage Admin accounts
+    }
+
+    public function test_employees_without_a_login_show_none(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+        $employee = Employee::factory()->create();
+
+        $row = collect($this->getJson(route('employees.data'))->json('data'))->firstWhere('id', $employee->id);
+        $this->assertNull($row['login']);
+        $this->get(route('employees.show', $employee))->assertSee('No login');
+    }
+
     public function test_permanently_deleting_the_employee_unlinks_the_login(): void
     {
         $employee = Employee::factory()->create();
