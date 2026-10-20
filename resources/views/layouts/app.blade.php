@@ -122,6 +122,16 @@
         .side-link-danger, .side-link-danger i { color: #c0264b; }
         .side-link-danger:hover { background: #fff1f3; color: #a51d3e; }
 
+        /* Notifications (bell dropdown and the Notifications page) */
+        .notification-menu { width: 22rem; max-width: calc(100vw - 2rem); }
+        .notification-list { max-height: 22rem; overflow-y: auto; }
+        .notification-count { font-size: .62rem; }
+        .notification-icon { width: 2rem; height: 2rem; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .notification-unread { background: var(--brand-light); }
+        .notification-dot { width: .5rem; height: .5rem; border-radius: 50%; background: var(--brand); margin-top: .4rem; }
+        .notification-message { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .min-w-0 { min-width: 0; }
+
         /* Top bar + content */
         .topbar {
             position: sticky; top: 0; z-index: 1030; display: flex; align-items: center; gap: .75rem;
@@ -269,6 +279,40 @@
             {{-- Right side: today's date, then the profile menu --}}
             <div class="ms-auto d-flex align-items-center gap-2">
                 <span class="chip d-none d-md-inline-flex"><span class="dot"></span> {{ now()->format('l, d M Y') }}</span>
+
+                {{-- Notifications: the bell, with the number of unread ones and the 5 latest --}}
+                @php($unreadCount = $me->unreadNotifications()->count())
+                @php($latestNotifications = $me->notifications()->limit(5)->get())
+                <div class="dropdown">
+                    <button type="button" class="btn btn-soft btn-icon position-relative" data-bs-toggle="dropdown" aria-expanded="false"
+                            aria-label="Notifications{{ $unreadCount ? " ({$unreadCount} unread)" : '' }}">
+                        <i class="bi bi-bell fs-5"></i>
+                        @if ($unreadCount)
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill text-bg-danger notification-count">
+                                {{ $unreadCount > 9 ? '9+' : $unreadCount }}
+                            </span>
+                        @endif
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end shadow border-0 p-0 notification-menu">
+                        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+                            <span class="fw-semibold">Notifications</span>
+                            @if ($unreadCount)
+                                <form method="POST" action="{{ route('notifications.read-all') }}">
+                                    @csrf
+                                    <button type="submit" class="btn btn-link btn-sm p-0 text-decoration-none">Mark all as read</button>
+                                </form>
+                            @endif
+                        </div>
+                        <div class="list-group list-group-flush notification-list">
+                            @forelse ($latestNotifications as $notification)
+                                @include('partials.notification-item')
+                            @empty
+                                <div class="text-center text-muted small py-4"><i class="bi bi-bell-slash d-block fs-4 mb-1 opacity-50"></i>No notifications yet.</div>
+                            @endforelse
+                        </div>
+                        <a href="{{ route('notifications.index') }}" class="d-block text-center small fw-semibold py-2 border-top text-decoration-none">View all notifications</a>
+                    </div>
+                </div>
 
                 <div class="dropdown">
                     <button type="button" class="profile-chip" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="Profile menu">

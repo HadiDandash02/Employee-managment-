@@ -8,6 +8,7 @@ use App\Enums\LeaveStatus;
 use App\Http\Requests\Leave\DecideLeaveRequestRequest;
 use App\Http\Requests\Leave\StoreLeaveRequestRequest;
 use App\Models\LeaveRequest;
+use App\Services\Leave\LeaveBalanceService;
 use App\Services\Leave\LeaveRequestService;
 use Illuminate\Http\Request;
 
@@ -26,12 +27,15 @@ class LeaveRequestController extends Controller
     /**
      * My requests (Employee) or the requests to review (Manager: own department, HR: all).
      */
-    public function index(Request $request)
+    public function index(Request $request, LeaveBalanceService $balances)
     {
         $status = LeaveStatus::tryFrom((string) $request->query('status'));
         $visible = LeaveRequest::visibleTo($request->user());
+        $employee = $request->user()->employee;
 
         return view('leave.index', [
+            // "My leave this year" card; null for a login without an employee record.
+            'balance' => $employee ? $balances->for($employee) : null,
             'leaveRequests' => (clone $visible)
                 ->with(['employee.department', 'approver'])
                 ->when($status, fn ($q) => $q->where('status', $status))
@@ -45,9 +49,11 @@ class LeaveRequestController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request, LeaveBalanceService $balances)
     {
-        return view('leave.create');
+        return view('leave.create', [
+            'balance' => $balances->for($request->user()->employee),
+        ]);
     }
 
     public function store(StoreLeaveRequestRequest $request)
@@ -57,10 +63,14 @@ class LeaveRequestController extends Controller
         return redirect()->route('leave-requests.index')->with('success', 'Your leave request was sent.');
     }
 
-    public function show(LeaveRequest $leaveRequest)
+    public function show(LeaveRequest $leaveRequest, LeaveBalanceService $balances)
     {
+        $leaveRequest->load(['employee.department', 'approver', 'actions.user']);
+
         return view('leave.show', [
-            'leaveRequest' => $leaveRequest->load(['employee.department', 'approver', 'actions.user']),
+            'leaveRequest' => $leaveRequest,
+            // The employee's balance for the year of this leave: helps the manager decide.
+            'balance' => $balances->for($leaveRequest->employee, $leaveRequest->start_date->year),
         ]);
     }
 

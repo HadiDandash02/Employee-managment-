@@ -148,6 +148,13 @@
                             <div class="info-label">Annual salary</div>
                             <div>{{ number_format($employee->salary, 2) }}</div>
                         </div>
+                        <div class="col-sm-6">
+                            <div class="info-label">Leave</div>
+                            <div>
+                                {{ App\Services\Leave\LeaveBalance::format($employee->base_leave_days) }} days a year
+                                + {{ config('leave.monthly_accrual') }} per month
+                            </div>
+                        </div>
                         {{-- department → branch → company (belongsTo chain) --}}
                         <div class="col-sm-6">
                             <div class="info-label">Branch</div>

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\LeavePeriod;
 use App\Enums\LeaveStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,17 +16,22 @@ class LeaveRequest extends Model
     use HasFactory;
 
     /**
-     * Only what the employee types. status, approved_by and approved_at are set by
-     * App\Services\Leave\LeaveRequestService, never from a form.
+     * Only what the employee types (+ days, counted by the service). status, approved_by and
+     * approved_at are set by App\Services\Leave\LeaveRequestService, never from a form.
      */
     protected $fillable = [
         'start_date',
+        'start_period',
         'end_date',
+        'end_period',
+        'days',
         'reason',
     ];
 
     protected $attributes = [
         'status' => 'pending',
+        'start_period' => 'morning',
+        'end_period' => 'afternoon',
     ];
 
     protected function casts(): array
@@ -33,6 +39,9 @@ class LeaveRequest extends Model
         return [
             'start_date' => 'date',
             'end_date' => 'date',
+            'start_period' => LeavePeriod::class,
+            'end_period' => LeavePeriod::class,
+            'days' => 'float',
             'approved_at' => 'datetime',
             'status' => LeaveStatus::class,
         ];
@@ -76,11 +85,60 @@ class LeaveRequest extends Model
     }
 
     /**
-     * Number of calendar days, both ends included (1–3 March = 3 days).
+     * "07 Oct 2026 (afternoon) → 09 Oct 2026 (morning)", "07 Oct 2026, morning", "07 Oct 2026".
+     * Only half days are spelled out; a full day needs no period.
      */
-    public function getDaysAttribute(): int
+    public function getPeriodTextAttribute(): string
     {
-        return (int) $this->start_date->diffInDays($this->end_date) + 1;
+        $start = $this->start_date->format('d M Y');
+
+        if ($this->start_date->equalTo($this->end_date)) {
+            return match (true) {
+                $this->start_period === LeavePeriod::Afternoon => "{$start}, afternoon",
+                $this->end_period === LeavePeriod::Morning => "{$start}, morning",
+                default => $start,
+            };
+        }
+
+        $from = $start.($this->start_period === LeavePeriod::Afternoon ? ' (afternoon)' : '');
+        $to = $this->end_date->format('d M Y').($this->end_period === LeavePeriod::Morning ? ' (morning)' : '');
+
+        return "{$from} → {$to}";
+    }
+
+    /**
+     * "2.5" or "3": the days without a useless ".0".
+     */
+    public function getDaysTextAttribute(): string
+    {
+        return rtrim(rtrim(number_format($this->days, 1), '0'), '.');
+    }
+
+    /**
+     * "1 day", "1.5 days", "0.5 days" (str()->plural() would round 1.5 down to "day").
+     */
+    public function getDaysLabelAttribute(): string
+    {
+        return $this->days_text.($this->days == 1 ? ' day' : ' days');
+    }
+
+    /**
+     * Each half day as a sortable string: "2026-10-07-1" (morning) < "2026-10-07-2" (afternoon) < "2026-10-08-1".
+     * Two leaves overlap when each one starts before the other ends (LeaveRequestService::submit()).
+     */
+    public static function halfDaySlot(string $date, LeavePeriod $period): string
+    {
+        return $date.($period === LeavePeriod::Afternoon ? '-2' : '-1');
+    }
+
+    public function startSlot(): string
+    {
+        return self::halfDaySlot($this->start_date->toDateString(), $this->start_period);
+    }
+
+    public function endSlot(): string
+    {
+        return self::halfDaySlot($this->end_date->toDateString(), $this->end_period);
     }
 
     /**

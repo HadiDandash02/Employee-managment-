@@ -6,7 +6,7 @@ tests live in folders with the **same area name**, so you can find everything fo
 | Area | Used by | URL prefix | Controllers | Views | Tests |
 |---|---|---|---|---|---|
 | **Auth** | Visitors who are not logged in | `/login` | `Auth/LoginController` | `resources/views/auth/` | `tests/Feature/Auth/` |
-| **Account** | Every logged-in user | `/account` | `Account/AccountController` (change own password) | `resources/views/account/` | `tests/Feature/Account/` |
+| **Account** | Every logged-in user | `/account`, `/notifications` | `Account/AccountController` (change own password), `Account/NotificationController` (the bell: list, open, mark all read) | `resources/views/account/` | `tests/Feature/Account/` |
 | **Staff** | Admin, HR, Manager | `/employees` | `Staff/EmployeeController` (Manage Employees: list, filters, CRUD, trash) | `resources/views/staff/employees/` | `tests/Feature/Staff/` |
 | **Admin** | Admin and HR (the management panel) | `/admin` for Admin, `/hr` for HR | `Admin/DashboardController`, `Admin/UserController` (Manage Users), `Admin/DepartmentController` (Manage Departments) | `resources/views/admin/` | `tests/Feature/Admin/` |
 | **Leave** | Every role: Employees request, Managers (own department) and HR approve/reject | `/leave-requests` | `Leave/LeaveRequestController` (thin: calls `LeaveRequestService`) | `resources/views/leave/` | `tests/Feature/Leave/` |
@@ -27,7 +27,8 @@ Access is **not** checked inside the controllers; the routes do it with middlewa
 ## Related folders (same area names)
 
 - **Form Requests (validation):** `app/Http/Requests/Staff/` (employees), `app/Http/Requests/Admin/` (departments).
-- **Services (business logic):** `app/Services/Employee/DashboardService.php`, `app/Services/Leave/LeaveRequestService.php`
+- **Services (business logic):** `app/Services/Employee/DashboardService.php`, `app/Services/Leave/LeaveRequestService.php`,
+  `app/Services/Leave/LeaveBalanceService.php` (leave earned: base 3 + 1.25 per month, see `config/leave.php`)
   (business rules + `DB::transaction`; a broken rule throws `App\Exceptions\BusinessRuleException`).
 - **Enums (fixed lists of values):** `app/Enums/LeaveStatus.php`, `app/Enums/LeaveAction.php`.
 - **Models** are shared by all areas: `app/Models/`.

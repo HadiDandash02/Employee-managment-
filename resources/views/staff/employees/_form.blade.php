@@ -91,6 +91,22 @@
                 </div>
                 <div class="form-text" id="salary-hint"></div>
             </div>
+
+            <div class="col-md-6">
+                <label for="base_leave_days" class="form-label">Base leave days</label>
+                <div class="input-group has-validation">
+                    <span class="input-group-text"><i class="bi bi-calendar-heart"></i></span>
+                    <input type="number" step="0.5" min="0" max="60" id="base_leave_days" name="base_leave_days"
+                           value="{{ old('base_leave_days', $employee->base_leave_days) }}" required
+                           class="form-control @error('base_leave_days') is-invalid @enderror">
+                    <span class="input-group-text">working days</span>
+                    @error('base_leave_days') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+                <div class="form-text">
+                    Given at the start of every year (default {{ config('leave.base_days') }}).
+                    On top, everyone earns {{ config('leave.monthly_accrual') }} days each month.
+                </div>
+            </div>
         </div>
 
         <hr class="my-4">

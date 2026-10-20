@@ -41,15 +41,17 @@
                     <div class="row g-4">
                         <div class="col-sm-4">
                             <div class="info-label">From</div>
-                            <div>{{ $leaveRequest->start_date->format('d M Y') }}</div>
+                            <div>{{ $leaveRequest->start_date->format('D d M Y') }}</div>
+                            <div class="small text-muted">{{ $leaveRequest->start_period->label() }}</div>
                         </div>
                         <div class="col-sm-4">
                             <div class="info-label">To</div>
-                            <div>{{ $leaveRequest->end_date->format('d M Y') }}</div>
+                            <div>{{ $leaveRequest->end_date->format('D d M Y') }}</div>
+                            <div class="small text-muted">{{ $leaveRequest->end_period->label() }}</div>
                         </div>
                         <div class="col-sm-4">
-                            <div class="info-label">Days</div>
-                            <div>{{ $leaveRequest->days }}</div>
+                            <div class="info-label">Working days</div>
+                            <div class="fw-semibold">{{ $leaveRequest->days_text }}</div>
                         </div>
                         <div class="col-12">
                             <div class="info-label">Reason</div>
@@ -94,6 +96,11 @@
         </div>
 
         <div class="col-lg-5">
+            @include('partials.leave-balance', [
+                'class' => 'mb-4',
+                'title' => ($leaveRequest->isOwnedBy(auth()->user()) ? 'My' : $employee->first_name."'s").' leave in '.$balance->year,
+            ])
+
             <div class="panel">
                 <div class="panel-header"><h2 class="panel-title">History</h2></div>
                 <ul class="list-group list-group-flush">

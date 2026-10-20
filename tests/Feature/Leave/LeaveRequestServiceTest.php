@@ -3,16 +3,20 @@
 namespace Tests\Feature\Leave;
 
 use App\Enums\LeaveAction;
+use App\Enums\LeavePeriod;
 use App\Enums\LeaveStatus;
 use App\Exceptions\BusinessRuleException;
 use App\Models\Employee;
 use App\Models\LeaveRequest;
 use App\Models\LeaveRequestAction;
 use App\Models\User;
+use App\Notifications\LeaveRequestDecided;
+use App\Notifications\LeaveRequestSubmitted;
 use App\Services\Leave\LeaveRequestService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Notification;
 use RuntimeException;
 use Tests\TestCase;
 
@@ -51,7 +55,7 @@ class LeaveRequestServiceTest extends TestCase
         $leave = $this->service->submit($this->worker, ['start_date' => '2026-11-02', 'end_date' => '2026-11-04', 'reason' => 'Family trip'], $user);
 
         $this->assertSame(LeaveStatus::Pending, $leave->fresh()->status);
-        $this->assertSame(3, $leave->days);
+        $this->assertSame(3.0, $leave->days); // Mon–Wed
         $this->assertDatabaseHas('leave_request_actions', [
             'leave_request_id' => $leave->id, 'user_id' => $user->id, 'action' => 'submitted', 'from_status' => null, 'to_status' => 'pending',
         ]);
@@ -70,7 +74,7 @@ class LeaveRequestServiceTest extends TestCase
         LeaveRequest::factory()->rejected()->create(['employee_id' => $this->worker->id, 'start_date' => '2026-11-20', 'end_date' => '2026-11-22']);
 
         // Same dates as a REJECTED request: fine.
-        $this->service->submit($this->worker, ['start_date' => '2026-11-21', 'end_date' => '2026-11-21', 'reason' => 'Retry'], $this->manager);
+        $this->service->submit($this->worker, ['start_date' => '2026-11-20', 'end_date' => '2026-11-20', 'reason' => 'Retry'], $this->manager);
 
         $this->expectException(BusinessRuleException::class);
         $this->service->submit($this->worker, ['start_date' => '2026-11-12', 'end_date' => '2026-11-14', 'reason' => 'Overlaps'], $this->manager);
@@ -165,6 +169,91 @@ class LeaveRequestServiceTest extends TestCase
         $this->assertSame(LeaveStatus::Pending, $leave->status);
         $this->assertNull($leave->approved_by);
         $this->assertNull($leave->approved_at);
+    }
+
+    public function test_half_days_are_saved_with_their_day_count(): void
+    {
+        $leave = $this->service->submit($this->worker, [
+            'start_date' => '2026-11-02', 'start_period' => 'afternoon', 'end_date' => '2026-11-04', 'end_period' => 'morning', 'reason' => 'Trip',
+        ], $this->manager);
+
+        $leave->refresh();
+        $this->assertSame(LeavePeriod::Afternoon, $leave->start_period);
+        $this->assertSame(LeavePeriod::Morning, $leave->end_period);
+        $this->assertSame(2.0, $leave->days);
+        $this->assertSame('02 Nov 2026 (afternoon) → 04 Nov 2026 (morning)', $leave->period_text);
+    }
+
+    public function test_one_day_cannot_go_from_afternoon_back_to_morning(): void
+    {
+        $this->expectExceptionObject(new BusinessRuleException('A one-day leave cannot start in the afternoon and end in the morning.'));
+
+        $this->service->submit($this->worker, [
+            'start_date' => '2026-11-02', 'start_period' => 'afternoon', 'end_date' => '2026-11-02', 'end_period' => 'morning', 'reason' => 'x',
+        ], $this->manager);
+    }
+
+    public function test_a_weekend_only_leave_is_refused(): void
+    {
+        $this->expectExceptionObject(new BusinessRuleException('These dates fall on a weekend: there are no working days to take.'));
+
+        $this->service->submit($this->worker, ['start_date' => '2026-11-07', 'end_date' => '2026-11-08', 'reason' => 'x'], $this->manager);
+    }
+
+    public function test_morning_and_afternoon_of_the_same_day_do_not_overlap(): void
+    {
+        $data = ['start_date' => '2026-11-02', 'end_date' => '2026-11-02', 'reason' => 'Doctor'];
+
+        $this->service->submit($this->worker, [...$data, 'start_period' => 'morning', 'end_period' => 'morning'], $this->manager);
+        $this->service->submit($this->worker, [...$data, 'start_period' => 'afternoon', 'end_period' => 'afternoon'], $this->manager);
+        $this->assertSame(2, $this->worker->leaveRequests()->count());
+
+        // But the full day now overlaps both halves.
+        $this->expectException(BusinessRuleException::class);
+        $this->service->submit($this->worker, $data, $this->manager);
+    }
+
+    public function test_submit_notifies_the_department_manager_and_hr_but_not_others(): void
+    {
+        Notification::fake();
+        $hr = User::factory()->hr()->create();
+        $admin = User::factory()->admin()->create();
+        $suspendedHr = User::factory()->hr()->suspended()->create();
+        $otherManager = User::factory()->manager()->create(['employee_id' => Employee::factory()->inDepartment('Support')->create()->id]);
+        $requester = User::factory()->create(['employee_id' => $this->worker->id]);
+
+        $this->service->submit($this->worker, ['start_date' => '2026-11-02', 'end_date' => '2026-11-03', 'reason' => 'Trip'], $requester);
+
+        Notification::assertSentTo([$this->manager, $hr, $admin], LeaveRequestSubmitted::class);
+        Notification::assertNotSentTo([$otherManager, $requester, $suspendedHr], LeaveRequestSubmitted::class);
+    }
+
+    public function test_the_employee_is_notified_of_the_decision(): void
+    {
+        Notification::fake();
+        $requester = User::factory()->create(['employee_id' => $this->worker->id]);
+
+        $this->service->reject($this->pending(), $this->manager, 'Busy week');
+
+        Notification::assertSentTo($requester, LeaveRequestDecided::class, function (LeaveRequestDecided $notification) use ($requester) {
+            $data = $notification->toArray($requester);
+
+            return $data['title'] === 'Leave request rejected' && str_contains($data['message'], 'Note: Busy week');
+        });
+    }
+
+    public function test_nobody_is_notified_when_the_transaction_rolls_back(): void
+    {
+        Notification::fake();
+        User::factory()->create(['employee_id' => $this->worker->id]);
+        LeaveRequestAction::creating(fn () => throw new RuntimeException('History table is down'));
+
+        try {
+            $this->service->approve($this->pending(), $this->manager);
+        } catch (RuntimeException) {
+        }
+
+        Notification::assertNothingSent();
     }
 
     public function test_reject_records_the_reason(): void

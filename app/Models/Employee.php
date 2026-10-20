@@ -22,7 +22,16 @@ class Employee extends Model
         'email',
         'department_id',
         'salary',
+        'base_leave_days',
         'date_of_birth',
+    ];
+
+    /**
+     * Leave days every employee starts the year with (config/leave.php; HR can change it per employee).
+     * The monthly 1.25 days come on top: see App\Services\Leave\LeaveBalanceService.
+     */
+    protected $attributes = [
+        'base_leave_days' => 3,
     ];
 
     protected function casts(): array
@@ -30,6 +39,7 @@ class Employee extends Model
         return [
             'date_of_birth' => 'date',
             'salary' => 'decimal:2',
+            'base_leave_days' => 'float',
         ];
     }
 

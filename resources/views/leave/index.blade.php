@@ -36,6 +36,10 @@
         @endcan
     </div>
 
+    @if ($balance)
+        @include('partials.leave-balance', ['class' => 'mb-4'])
+    @endif
+
     <div class="panel">
         <div class="panel-header">
             {{-- Status tabs, with the number of requests in each --}}
@@ -89,13 +93,8 @@
                                     </div>
                                 </div>
                             </td>
-                            <td class="text-nowrap tabular">
-                                {{ $leaveRequest->start_date->format('d M Y') }}
-                                @unless ($leaveRequest->start_date->equalTo($leaveRequest->end_date))
-                                    <span class="text-muted">→</span> {{ $leaveRequest->end_date->format('d M Y') }}
-                                @endunless
-                            </td>
-                            <td class="text-center tabular">{{ $leaveRequest->days }}</td>
+                            <td class="text-nowrap tabular">{{ $leaveRequest->period_text }}</td>
+                            <td class="text-center tabular">{{ $leaveRequest->days_text }}</td>
                             <td><div class="text-truncate leave-reason" title="{{ $leaveRequest->reason }}">{{ $leaveRequest->reason }}</div></td>
                             <td>
                                 @php $c = $leaveRequest->status->color(); @endphp
