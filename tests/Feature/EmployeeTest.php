@@ -177,8 +177,9 @@ class EmployeeTest extends TestCase
     {
         $beirut = Branch::factory()->create(['name' => 'Beirut']);
         $tripoli = Branch::factory()->create(['name' => 'Tripoli']);
-        Employee::factory()->for(Department::factory()->for($beirut))->create(['first_name' => 'Bea', 'last_name' => 'X']);
-        Employee::factory()->for(Department::factory()->for($beirut))->create(['first_name' => 'Bob', 'last_name' => 'X']);
+        // fixed names: two random ones could collide (department names are unique per branch)
+        Employee::factory()->for(Department::factory()->for($beirut)->create(['name' => 'Sales']))->create(['first_name' => 'Bea', 'last_name' => 'X']);
+        Employee::factory()->for(Department::factory()->for($beirut)->create(['name' => 'Finance']))->create(['first_name' => 'Bob', 'last_name' => 'X']);
         Employee::factory()->for(Department::factory()->for($tripoli))->create(['first_name' => 'Tom', 'last_name' => 'X']);
 
         $names = fn (array $filters) => $this->names($this->dataTable(['filters' => $filters, 'order' => [['column' => 3, 'dir' => 'asc']]]));
