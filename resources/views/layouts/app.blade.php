@@ -178,6 +178,10 @@
         .btn-soft:hover, .btn-soft:focus, .btn-soft.show { background: #f3f6f6; border-color: #cfd8d8; color: #111; }
 
         .btn-icon { width: 2rem; height: 2rem; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+        /* Eye button after a password field: <button data-password-toggle="field-id"> */
+        .password-toggle { border: 1px solid #dfe5e5; border-left: 0; background: #fff; color: #6b7280; border-radius: 0 .55rem .55rem 0; }
+        .password-toggle:hover, .password-toggle:focus { background: #f3f6f6; color: var(--brand); border-color: #dfe5e5; }
+        .is-invalid + .password-toggle { border-color: var(--bs-form-invalid-border-color); }
         /* Row actions: one "⋮" button that opens View / Edit / Delete */
         .actions-toggle { color: #4b5563; border-radius: 50%; }
         .actions-toggle:hover, .actions-toggle[aria-expanded="true"] { background: var(--brand-light); color: var(--brand); }
@@ -343,6 +347,19 @@
          * "⋮" row-actions menu used by the DataTables (employees, users).
          * The menu is positioned "fixed" so it is never cut off by the table's sideways scroll.
          */
+        // Show / hide a password: any <button data-password-toggle="field-id"> (login, user form, …).
+        document.addEventListener('click', event => {
+            const button = event.target.closest('[data-password-toggle]');
+            const input = button && document.getElementById(button.dataset.passwordToggle);
+            if (!input) return;
+
+            const show = input.type === 'password';
+            input.type = show ? 'text' : 'password';
+            button.innerHTML = `<i class="bi ${show ? 'bi-eye-slash' : 'bi-eye'}"></i>`;
+            button.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+            button.setAttribute('aria-pressed', show ? 'true' : 'false');
+        });
+
         window.actionsMenu = (name, items) => {
             const label = String(name ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
             return `<div class="dropdown actions-menu d-inline-block">

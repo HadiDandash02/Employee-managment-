@@ -177,6 +177,14 @@ class AdminUserTest extends TestCase
         }
     }
 
+    public function test_password_fields_have_a_show_password_button(): void
+    {
+        $this->get(route('admin.users.create'))
+            ->assertOk()
+            ->assertSee('data-password-toggle="password"', false)
+            ->assertSee('data-password-toggle="password_confirmation"', false);
+    }
+
     public function test_hr_cannot_give_the_admin_role(): void
     {
         $this->actingAs(User::factory()->hr()->create());

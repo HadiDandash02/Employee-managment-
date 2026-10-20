@@ -31,7 +31,6 @@
         .login-main { display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 3rem 2rem; }
         .login-box { width: 100%; max-width: 420px; }
         .login-box .form-control { min-height: 2.9rem; }
-        .password-toggle { border: 1px solid #dfe5e5; border-left: 0; background: #fff; color: #6b7280; border-radius: 0 .55rem .55rem 0; }
         .login-mobile-brand { display: none; }
 
         @media (max-width: 991.98px) {
@@ -97,7 +96,7 @@
                         <div class="input-group has-validation">
                             <input type="password" id="password" name="password" autocomplete="current-password"
                                    class="form-control border-end-0 @error('password') is-invalid @enderror" placeholder="Your password" required>
-                            <button type="button" class="btn password-toggle" id="password-toggle" aria-label="Show password">
+                            <button type="button" class="btn password-toggle" data-password-toggle="password" aria-label="Show password" aria-pressed="false">
                                 <i class="bi bi-eye"></i>
                             </button>
                             @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
@@ -121,14 +120,7 @@
 
 @push('scripts')
 <script>
-    document.getElementById('password-toggle').addEventListener('click', event => {
-        const input = document.getElementById('password');
-        const show = input.type === 'password';
-        input.type = show ? 'text' : 'password';
-        event.currentTarget.innerHTML = `<i class="bi ${show ? 'bi-eye-slash' : 'bi-eye'}"></i>`;
-        event.currentTarget.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
-    });
-
+    // The eye button (show/hide password) is handled by the shared script in layouts/app.
     document.getElementById('login-form').addEventListener('submit', () => {
         const button = document.getElementById('login-btn');
         button.disabled = true;
