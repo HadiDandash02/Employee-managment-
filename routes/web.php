@@ -1,13 +1,15 @@
 <?php
 
-use App\Http\Controllers\AccountController;
-use App\Http\Controllers\Admin\DashboardController;
+// Controllers are grouped by area (see app/Http/Controllers/README.md):
+//   Auth (logged out) · Account (every user) · Staff (Admin/HR/Manager) · Admin (Admin/HR) · Employee (Employee role)
+use App\Http\Controllers\Account\AccountController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\DepartmentController;
-use App\Http\Controllers\EmployeeController;
-use App\Http\Controllers\EmployeeDashboardController;
-use App\Http\Controllers\MyProfileController;
+use App\Http\Controllers\Employee\DashboardController as EmployeeDashboardController;
+use App\Http\Controllers\Employee\ProfileController as EmployeeProfileController;
+use App\Http\Controllers\Staff\EmployeeController;
 use App\Http\Middleware\SetPanelPrefix;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -32,7 +34,7 @@ Route::middleware(['auth', 'auth.session', SetPanelPrefix::class])->group(functi
     // "active" is the CheckEmployeeStatus middleware (alias registered in bootstrap/app.php).
     Route::middleware(['can:profile.view-own', 'active'])->group(function () {
         Route::get('employee/dashboard', EmployeeDashboardController::class)->name('employee.dashboard');
-        Route::get('my-profile', MyProfileController::class)->name('profile.show');
+        Route::get('my-profile', EmployeeProfileController::class)->name('profile.show');
     });
 
     // Employees: every action needs its own permission (config/permissions.php).
@@ -73,7 +75,7 @@ Route::middleware(['auth', 'auth.session', SetPanelPrefix::class])->group(functi
         ->group(function () {
             // /admin → /admin/dashboard (HR: /hr → /hr/dashboard)
             Route::get('/', fn () => redirect()->route('admin.dashboard'))->name('home');
-            Route::get('dashboard', DashboardController::class)->name('dashboard');
+            Route::get('dashboard', AdminDashboardController::class)->name('dashboard');
             Route::get('users/data', [UserController::class, 'data'])->name('users.data');
             Route::resource('users', UserController::class)->except(['show']);
         });

@@ -155,7 +155,7 @@
                 <div class="list-group list-group-flush">
                     @forelse ($recentEmployees as $employee)
                         <a href="{{ route('employees.show', $employee) }}" class="list-group-item list-group-item-action d-flex align-items-center gap-2 px-3">
-                            @include('employees._avatar', ['size' => 32])
+                            @include('partials.avatar', ['size' => 32])
                             <div class="lh-sm me-auto">
                                 <div class="fw-semibold small">{{ $employee->full_name }}</div>
                                 <div class="small text-muted">{{ $employee->department?->name }}</div>
