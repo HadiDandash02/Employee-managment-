@@ -76,6 +76,76 @@ class SoftDeleteTest extends TestCase
         $this->assertSame(0, Employee::withTrashed()->count());
     }
 
+    public function test_selected_trashed_employees_can_be_restored(): void
+    {
+        [$a, $b, $c] = Employee::factory(3)->create();
+        collect([$a, $b, $c])->each->delete();
+
+        $this->postJson(route('employees.trash.restore'), ['ids' => [$a->id, $b->id]])
+            ->assertOk()
+            ->assertJson(['message' => '2 employees restored.']);
+
+        $this->assertNotSoftDeleted($a);
+        $this->assertNotSoftDeleted($b);
+        $this->assertSoftDeleted($c);
+    }
+
+    public function test_selected_trashed_employees_can_be_deleted_forever(): void
+    {
+        [$trashedA, $trashedB, $kept] = Employee::factory(3)->create();
+        $trashedA->delete();
+        $trashedB->delete();
+        $kept->delete();
+        $active = Employee::factory()->create();
+
+        // The active employee's id is ignored: only rows in the trash can be deleted forever.
+        $this->deleteJson(route('employees.trash.force'), ['ids' => [$trashedA->id, $trashedB->id, $active->id]])
+            ->assertOk()
+            ->assertJson(['message' => '2 employees permanently deleted.']);
+
+        $this->assertModelMissing($trashedA);
+        $this->assertModelMissing($trashedB);
+        $this->assertSoftDeleted($kept);
+        $this->assertNotSoftDeleted($active);
+    }
+
+    public function test_empty_trash_deletes_every_trashed_employee(): void
+    {
+        Employee::factory(12)->create()->each->delete(); // more than one page
+        $active = Employee::factory()->create();
+
+        $this->deleteJson(route('employees.trash.empty'))
+            ->assertOk()
+            ->assertJson(['message' => 'Trash emptied: 12 employees permanently deleted.']);
+
+        $this->assertSame(0, Employee::onlyTrashed()->count());
+        $this->assertModelExists($active);
+
+        $this->deleteJson(route('employees.trash.empty'))->assertJson(['message' => 'The trash is already empty.']);
+    }
+
+    public function test_trash_bulk_actions_validate_ids_and_routes_do_not_clash(): void
+    {
+        $this->postJson(route('employees.trash.restore'), ['ids' => []])->assertUnprocessable();
+        $this->deleteJson(route('employees.trash.force'), ['ids' => ['abc']])->assertUnprocessable();
+
+        // "trash" is not treated as an employee id
+        $this->assertSame(url('/employees/trash/restore'), route('employees.trash.restore'));
+        $this->get(route('employees.index'))->assertSee('Empty trash')->assertSee('Restore selected')->assertSee('Delete forever');
+    }
+
+    public function test_manager_cannot_use_trash_bulk_actions(): void
+    {
+        $employee = Employee::factory()->create();
+        $employee->delete();
+        $this->actingAs(User::factory()->manager()->create());
+
+        $this->postJson(route('employees.trash.restore'), ['ids' => [$employee->id]])->assertForbidden();
+        $this->deleteJson(route('employees.trash.force'), ['ids' => [$employee->id]])->assertForbidden();
+        $this->deleteJson(route('employees.trash.empty'))->assertForbidden();
+        $this->assertSoftDeleted($employee);
+    }
+
     public function test_restoring_an_active_employee_is_not_found(): void
     {
         $employee = Employee::factory()->create();

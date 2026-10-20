@@ -46,6 +46,10 @@ Route::middleware(['auth', 'auth.session', SetPanelPrefix::class])->group(functi
     });
     Route::middleware('can:employees.delete')->group(function () {
         Route::delete('employees', [EmployeeController::class, 'bulkDestroy'])->name('employees.bulk-destroy');
+        // Trash bulk actions (before employees/{employee}, so "trash" is not read as an employee id).
+        Route::post('employees/trash/restore', [EmployeeController::class, 'bulkRestore'])->name('employees.trash.restore');
+        Route::delete('employees/trash/all', [EmployeeController::class, 'emptyTrash'])->name('employees.trash.empty');
+        Route::delete('employees/trash', [EmployeeController::class, 'bulkForceDelete'])->name('employees.trash.force');
         Route::delete('employees/{employee}', [EmployeeController::class, 'destroy'])->name('employees.destroy');
         // Trash: withTrashed() lets route model binding find soft-deleted employees.
         Route::post('employees/{employee}/restore', [EmployeeController::class, 'restore'])->withTrashed()->name('employees.restore');

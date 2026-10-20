@@ -101,6 +101,10 @@
                         <i class="bi bi-trash3 me-1"></i>Trash <span class="badge rounded-pill text-bg-secondary ms-1" id="trash-count">{{ $trashCount }}</span>
                     </label>
                 </div>
+                {{-- Shown only in the Trash view: permanently deletes every trashed employee (all pages) --}}
+                <button type="button" id="empty-trash" class="btn btn-sm btn-clear d-none">
+                    <i class="bi bi-trash3-fill me-1"></i> Empty trash
+                </button>
             @endcan
             <button type="button" class="btn btn-soft d-inline-flex align-items-center gap-2" id="filters-toggle"
                     data-bs-toggle="collapse" data-bs-target="#filters-panel" aria-expanded="true" aria-controls="filters-panel">
@@ -113,8 +117,16 @@
         <div id="bulk-bar" class="d-none align-items-center gap-3 px-3 py-2 border-bottom" style="background: var(--brand-light)">
             <i class="bi bi-check2-square text-primary"></i>
             <span class="small"><strong id="selected-count">0</strong> selected</span>
-            <button type="button" id="bulk-delete" class="btn btn-sm btn-danger">
+            {{-- Active view --}}
+            <button type="button" id="bulk-delete" class="btn btn-sm btn-danger" data-status="active">
                 <i class="bi bi-trash me-1"></i> Delete selected
+            </button>
+            {{-- Trash view --}}
+            <button type="button" id="bulk-restore" class="btn btn-sm btn-success d-none" data-status="trash">
+                <i class="bi bi-arrow-counterclockwise me-1"></i> Restore selected
+            </button>
+            <button type="button" id="bulk-force" class="btn btn-sm btn-danger d-none" data-status="trash">
+                <i class="bi bi-x-octagon me-1"></i> Delete forever
             </button>
             <button type="button" id="bulk-clear" class="btn btn-sm btn-link text-decoration-none">Clear selection</button>
         </div>
@@ -350,6 +362,8 @@
 
             const trashCount = document.getElementById('trash-count');
             if (trashCount && api.ajax.json()) trashCount.textContent = api.ajax.json().trashTotal;
+            const emptyTrash = document.getElementById('empty-trash');
+            if (emptyTrash && api.ajax.json()) emptyTrash.disabled = api.ajax.json().trashTotal === 0;
         },
     });
 
@@ -359,7 +373,9 @@
     document.querySelectorAll('input[name="status"]').forEach(radio => radio.addEventListener('change', () => {
         status = radio.value;
         rowChecks().forEach(box => box.checked = false);
-        table.column(0).visible(can.delete && status === 'active');
+        // Bulk buttons for this view only (active: move to trash; trash: restore / delete forever).
+        document.querySelectorAll('#bulk-bar [data-status]').forEach(button => button.classList.toggle('d-none', button.dataset.status !== status));
+        document.getElementById('empty-trash')?.classList.toggle('d-none', status !== 'trash');
         table.ajax.reload();
     }));
 
@@ -440,6 +456,29 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ids }),
         }, 'Could not delete the selected employees. Please refresh the page and try again.');
+    });
+
+    // Trash: restore or permanently delete the selected employees.
+    const trashAction = (id, url, method, question, failMessage) => document.getElementById(id)?.addEventListener('click', () => {
+        const ids = selectedIds();
+        const label = ids.length === 1 ? 'employee' : 'employees';
+        if (!ids.length || (question && !confirm(question(ids.length, label)))) return;
+
+        send(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids }) }, failMessage);
+    });
+
+    trashAction('bulk-restore', @json(route('employees.trash.restore')), 'POST', null,
+        'Could not restore the selected employees. Please refresh the page and try again.');
+    trashAction('bulk-force', @json(route('employees.trash.force')), 'DELETE',
+        (n, label) => `Delete ${n} selected ${label} forever? This cannot be undone.`,
+        'Could not delete the selected employees. Please refresh the page and try again.');
+
+    // Empty trash: every trashed employee, on every page.
+    document.getElementById('empty-trash')?.addEventListener('click', () => {
+        const total = document.getElementById('trash-count').textContent.trim();
+        if (!confirm(`Permanently delete ALL ${total} employees in the trash? This cannot be undone.`)) return;
+
+        send(@json(route('employees.trash.empty')), { method: 'DELETE' }, 'Could not empty the trash. Please refresh the page and try again.');
     });
 
     // Single delete from the row's trash button.

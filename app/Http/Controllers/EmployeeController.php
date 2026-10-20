@@ -196,6 +196,37 @@ class EmployeeController extends Controller
     }
 
     /**
+     * Restore several trashed employees at once (checkboxes in the Trash view).
+     */
+    public function bulkRestore(Request $request)
+    {
+        $count = Employee::onlyTrashed()->whereKey($this->validatedIds($request))->restore();
+
+        return $this->respond($request, $count.' '.Str::plural('employee', $count).' restored.');
+    }
+
+    /**
+     * Permanently delete several trashed employees (checkboxes in the Trash view).
+     * Only rows that are really in the trash are touched.
+     */
+    public function bulkForceDelete(Request $request)
+    {
+        $count = $this->forceDeleteTrashed(Employee::onlyTrashed()->whereKey($this->validatedIds($request)));
+
+        return $this->respond($request, $count.' '.Str::plural('employee', $count).' permanently deleted.');
+    }
+
+    /**
+     * "Empty trash": permanently delete every trashed employee, on every page.
+     */
+    public function emptyTrash(Request $request)
+    {
+        $count = $this->forceDeleteTrashed(Employee::onlyTrashed());
+
+        return $this->respond($request, $count ? "Trash emptied: {$count} ".Str::plural('employee', $count).' permanently deleted.' : 'The trash is already empty.');
+    }
+
+    /**
      * Bring a soft-deleted employee back from the trash.
      */
     public function restore(Request $request, Employee $employee)
@@ -234,6 +265,31 @@ class EmployeeController extends Controller
         if ($request->has('skills')) {
             $employee->skills()->sync($request->validated('skills') ?? []);
         }
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function validatedIds(Request $request): array
+    {
+        return $request->validate([
+            'ids' => ['required', 'array', 'max:1000'],
+            'ids.*' => ['integer'],
+        ])['ids'];
+    }
+
+    /**
+     * forceDelete() model by model (in a transaction), so the database cascades remove each
+     * employee's profile and skill links, and model events still fire.
+     */
+    private function forceDeleteTrashed($query): int
+    {
+        return DB::transaction(function () use ($query) {
+            $employees = $query->get();
+            $employees->each->forceDelete();
+
+            return $employees->count();
+        });
     }
 
     private function respond(Request $request, string $message)
