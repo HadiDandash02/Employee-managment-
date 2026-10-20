@@ -25,13 +25,17 @@
 return [
 
     'permissions' => [
-        'employees.view' => 'View employees',
+        'employees.view' => 'Open Manage Employees',
+        // Which employees: all of them, or only the user's own department (EmployeePolicy).
+        'employees.view-all' => 'See all employees',
+        'employees.view-team' => 'See employees of own department',
         'employees.create' => 'Add employees',
         'employees.update' => 'Edit employees',
         'employees.delete' => 'Delete employees',
         'users.manage' => 'Manage users',
         'departments.manage' => 'Manage departments',
         'profile.view-own' => 'See own employee profile',
+        'profile.update-own' => 'Edit own contact info (phone, address)',
     ],
 
     'roles' => [
@@ -45,21 +49,21 @@ return [
         'hr' => [
             'label' => 'HR',
             'description' => 'Full access to employees and user management.',
-            'permissions' => ['employees.view', 'employees.create', 'employees.update', 'employees.delete', 'users.manage', 'departments.manage', 'profile.view-own'],
+            'permissions' => ['employees.view', 'employees.view-all', 'employees.view-team', 'employees.create', 'employees.update', 'employees.delete', 'users.manage', 'departments.manage', 'profile.view-own', 'profile.update-own'],
             'manages' => ['hr', 'manager', 'employee'],
             'panel' => ['label' => 'HR', 'icon' => 'bi-briefcase', 'slug' => 'hr'],
         ],
         'manager' => [
             'label' => 'Manager',
-            'description' => 'Can view, add and edit employees, but not delete them.',
-            'permissions' => ['employees.view', 'employees.create', 'employees.update', 'profile.view-own'],
+            'description' => 'Can view the employees of their own department.',
+            'permissions' => ['employees.view', 'employees.view-team', 'profile.view-own', 'profile.update-own'],
             'manages' => [],
         ],
         // A login for one employee (users.employee_id): sees only their own profile.
         'employee' => [
             'label' => 'Employee',
             'description' => 'Can only see their own profile.',
-            'permissions' => ['profile.view-own'],
+            'permissions' => ['profile.view-own', 'profile.update-own'],
             'manages' => [],
         ],
     ],

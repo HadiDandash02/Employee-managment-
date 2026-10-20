@@ -169,7 +169,8 @@
     const filterForm = document.getElementById('filter-form');
     const initialSearch = @json($search);
     let status = 'active'; // 'active' or 'trash' (soft-deleted employees)
-    // What the logged-in user may do; the server checks this again on every request.
+    // What the logged-in user may do in general (checkboxes, bulk bar). Each row also carries
+    // row.can from EmployeePolicy for its own ⋮ menu; the server checks again on every request.
     const can = @json([
         'update' => auth()->user()->can('employees.update'),
         'delete' => auth()->user()->can('employees.delete'),
@@ -312,8 +313,8 @@
                        <li><hr class="dropdown-divider"></li>
                        <li><button type="button" class="dropdown-item text-danger js-force" data-url="${row.urls.force}" data-name="${esc(row.full_name)}"><i class="bi bi-x-octagon"></i> Delete forever</button></li>`
                     : `<li><a class="dropdown-item" href="${row.urls.show}"><i class="bi bi-eye"></i> View</a></li>
-                       ${can.update ? `<li><a class="dropdown-item" href="${row.urls.edit}"><i class="bi bi-pencil-square"></i> Edit</a></li>` : ''}
-                       ${can.delete ? `<li><hr class="dropdown-divider"></li>
+                       ${row.can.update ? `<li><a class="dropdown-item" href="${row.urls.edit}"><i class="bi bi-pencil-square"></i> Edit</a></li>` : ''}
+                       ${row.can.delete ? `<li><hr class="dropdown-divider"></li>
                        <li><button type="button" class="dropdown-item text-danger js-delete" data-url="${row.urls.destroy}" data-name="${esc(row.full_name)}"><i class="bi bi-trash"></i> Delete</button></li>` : ''}`),
                     () => ''),
             },

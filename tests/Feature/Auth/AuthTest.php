@@ -136,16 +136,18 @@ class AuthTest extends TestCase
         $this->assertModelExists($employee);
     }
 
-    public function test_manager_can_add_and_edit_but_not_delete(): void
+    public function test_manager_can_only_view_their_team_and_cannot_change_anyone(): void
     {
-        $employee = Employee::factory()->create();
-        $this->actingAs(User::factory()->manager()->create());
+        $own = Employee::factory()->inDepartment('Sales')->create();
+        $teammate = Employee::factory()->create(['department_id' => $own->department_id]);
+        $this->actingAs(User::factory()->manager()->create(['employee_id' => $own->id]));
 
-        $this->get(route('employees.create'))->assertOk();
-        $this->get(route('employees.edit', $employee))->assertOk()->assertDontSee('Danger zone');
-        $this->delete(route('employees.destroy', $employee))->assertForbidden();
+        $this->get(route('employees.show', $teammate))->assertOk();
+        $this->get(route('employees.create'))->assertForbidden();
+        $this->get(route('employees.edit', $teammate))->assertForbidden();
+        $this->delete(route('employees.destroy', $teammate))->assertForbidden();
         $this->get(url('/admin'))->assertNotFound();
 
-        $this->assertModelExists($employee);
+        $this->assertModelExists($teammate);
     }
 }

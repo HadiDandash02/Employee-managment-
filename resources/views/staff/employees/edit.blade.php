@@ -53,7 +53,7 @@
                 </div>
             </div>
 
-            @can('employees.delete')
+            @can('delete', $employee)
                 <div class="card border-danger-subtle shadow-sm">
                     <div class="card-header bg-danger-subtle text-danger-emphasis fw-semibold">
                         <i class="bi bi-exclamation-octagon me-1"></i> Danger zone

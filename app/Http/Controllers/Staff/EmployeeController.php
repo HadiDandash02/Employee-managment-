@@ -31,7 +31,7 @@ class EmployeeController extends Controller
             'pageLengths' => self::PAGE_LENGTHS,
             'departments' => $this->departments(),
             'branches' => Branch::with('company')->get()->sortBy(fn (Branch $branch) => [$branch->company?->name, $branch->name])->values(),
-            'trashCount' => Employee::onlyTrashed()->count(),
+            'trashCount' => $request->user()->can('employees.delete') ? Employee::onlyTrashed()->count() : 0,
         ]);
     }
 
@@ -45,6 +45,10 @@ class EmployeeController extends Controller
     {
         $search = trim((string) data_get($request->query('search'), 'value', ''));
         $trash = $request->query('status') === 'trash';
+        $user = $request->user();
+
+        // The trash belongs to whoever may delete; hiding the button is not enough, typing ?status=trash must fail too.
+        abort_if($trash && ! $user->can('employees.delete'), 403);
 
         $sort = null;
         $direction = 'asc';
@@ -62,7 +66,8 @@ class EmployeeController extends Controller
             : self::PAGE_LENGTHS[0];
         $start = max(0, $request->integer('start'));
 
-        $base = $trash ? Employee::onlyTrashed() : Employee::query();
+        // visibleTo(): HR/Admin get everyone, a Manager only their department (see EmployeePolicy::view()).
+        $base = ($trash ? Employee::onlyTrashed() : Employee::query())->visibleTo($user);
         $filters = is_array($request->query('filters')) ? $request->query('filters') : [];
         $query = (clone $base)->with(['department.branch', 'profile', 'user'])->search($search)->filter($filters)->sortBy($sort, $direction);
         $filtered = (clone $query)->count();
@@ -75,7 +80,7 @@ class EmployeeController extends Controller
             'draw' => $request->integer('draw'),
             'recordsTotal' => $base->count(),
             'recordsFiltered' => $filtered,
-            'trashTotal' => Employee::onlyTrashed()->count(),
+            'trashTotal' => $user->can('employees.delete') ? Employee::onlyTrashed()->count() : 0,
             'data' => $query->get()->map(fn (Employee $employee) => [
                 'id' => $employee->id,
                 'full_name' => $employee->full_name,
@@ -97,8 +102,13 @@ class EmployeeController extends Controller
                 'login' => $employee->user ? [
                     'username' => $employee->user->username,
                     'is_active' => $employee->user->is_active,
-                    'edit_url' => $request->user()->can('manage-user', $employee->user) ? route('admin.users.edit', $employee->user) : null,
+                    'edit_url' => $user->can('manage-user', $employee->user) ? route('admin.users.edit', $employee->user) : null,
                 ] : null,
+                // Which ⋮ menu items this user gets for THIS row (EmployeePolicy).
+                'can' => [
+                    'update' => $user->can('update', $employee),
+                    'delete' => $user->can('delete', $employee),
+                ],
                 'urls' => $employee->trashed()
                     ? [
                         'restore' => route('employees.restore', $employee),

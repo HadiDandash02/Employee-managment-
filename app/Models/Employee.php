@@ -137,6 +137,26 @@ class Employee extends Model
     }
 
     /**
+     * Only the employees this user may see (the list version of EmployeePolicy::view()):
+     * all of them (HR, Admin), their own department (Manager), or only themselves.
+     */
+    public function scopeVisibleTo(Builder $query, User $user): Builder
+    {
+        if ($user->hasPermission('employees.view-all')) {
+            return $query;
+        }
+
+        if ($user->hasPermission('employees.view-team')) {
+            $department = $user->employee?->department_id;
+
+            // A manager whose login is not linked to an employee has no department: they see no one.
+            return $department ? $query->where('department_id', $department) : $query->whereRaw('1 = 0');
+        }
+
+        return $query->whereKey($user->employee_id ?? 0);
+    }
+
+    /**
      * Apply the filter panel: department (id), branch (id), salary range, date of birth range and "added on" range.
      * Empty or invalid values are ignored.
      */

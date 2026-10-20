@@ -30,12 +30,12 @@
                 </div>
             </div>
             <div class="d-flex flex-wrap gap-2">
-                @can('employees.update')
+                @can('update', $employee)
                     <a href="{{ route('employees.edit', $employee) }}" class="btn btn-primary">
                         <i class="bi bi-pencil-square me-1"></i> Edit
                     </a>
                 @endcan
-                @can('employees.delete')
+                @can('delete', $employee)
                     <form action="{{ route('employees.destroy', $employee) }}" method="POST"
                           onsubmit="return confirm('Move {{ addslashes($employee->full_name) }} to the trash? You can restore them later.')">
                         @csrf
