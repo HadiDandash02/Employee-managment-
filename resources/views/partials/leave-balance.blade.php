@@ -1,7 +1,7 @@
 {{-- An employee's leave for one year: earned (base + monthly), taken, waiting, remaining. Needs $balance (App\Services\Leave\LeaveBalance). --}}
 @php($f = fn ($days) => App\Services\Leave\LeaveBalance::format($days))
 <div class="panel {{ $class ?? '' }}">
-    <div class="panel-header">
+    <div class="panel-header flex-wrap">
         <h2 class="panel-title"><i class="bi bi-calendar-heart me-1"></i> {{ $title ?? 'My leave in '.$balance->year }}</h2>
         <span class="small text-muted" title="Base days + days earned each month">
             {{ $f($balance->base) }} + {{ $balance->months }} {{ $balance->months === 1 ? 'month' : 'months' }} × {{ $f($balance->monthlyAccrual) }}
