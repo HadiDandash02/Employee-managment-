@@ -5,7 +5,7 @@
 @section('content')
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb small">
-            <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">{{ auth()->user()->panel_label }}</a></li>
+            <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">{{ auth()->user()->panel_label }}</a></li>
             <li class="breadcrumb-item"><a href="{{ route('admin.users.index') }}">Manage Users</a></li>
             <li class="breadcrumb-item active" aria-current="page">Edit {{ $user->name }}</li>
         </ol>

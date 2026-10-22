@@ -14,7 +14,10 @@
 |                on the admin page ('*' = all roles). Users with other roles
 |                are hidden from it completely.
 |
-| "panel":       name, icon and URL (/admin, /hr) of the management area
+| "prefix":      the first part of every URL for this role: /admin/..., /hr/...,
+|                /manager/..., /employee/... (SetPanelPrefix; another prefix is a 404).
+|
+| "panel":       name and icon of the management area
 |                for roles with users.manage: "Admin" for admins, "HR" for HR,
 |                so HR users never see the word "Admin".
 |
@@ -47,20 +50,23 @@ return [
             'description' => 'Full access, including all users.',
             'permissions' => ['*'],
             'manages' => ['*'],
-            'panel' => ['label' => 'Admin', 'icon' => 'bi-shield-lock', 'slug' => 'admin'],
+            'prefix' => 'admin',
+            'panel' => ['label' => 'Admin', 'icon' => 'bi-shield-lock'],
         ],
         'hr' => [
             'label' => 'HR',
             'description' => 'Full access to employees and user management.',
             'permissions' => ['employees.view', 'employees.view-all', 'employees.view-team', 'employees.create', 'employees.update', 'employees.delete', 'users.manage', 'departments.manage', 'profile.view-own', 'profile.update-own', 'leave.request', 'leave.approve'],
             'manages' => ['hr', 'manager', 'employee'],
-            'panel' => ['label' => 'HR', 'icon' => 'bi-briefcase', 'slug' => 'hr'],
+            'prefix' => 'hr',
+            'panel' => ['label' => 'HR', 'icon' => 'bi-briefcase'],
         ],
         'manager' => [
             'label' => 'Manager',
             'description' => 'Can view the employees of their own department and approve their leave.',
             'permissions' => ['employees.view', 'employees.view-team', 'profile.view-own', 'profile.update-own', 'leave.request', 'leave.approve'],
             'manages' => [],
+            'prefix' => 'manager',
         ],
         // A login for one employee (users.employee_id): sees only their own profile.
         'employee' => [
@@ -68,6 +74,7 @@ return [
             'description' => 'Can see their own profile and request leave.',
             'permissions' => ['profile.view-own', 'profile.update-own', 'leave.request'],
             'manages' => [],
+            'prefix' => 'employee',
         ],
     ],
 

@@ -111,24 +111,33 @@ class User extends Authenticatable
     }
 
     /**
-     * URL prefix of this user's management area: "admin" for admins, "hr" for HR, null when they have none.
+     * First part of every URL for this user's role: admin, hr, manager or employee (config "prefix").
+     * SetPanelPrefix makes route() fill it in, so route('employees.index') is /hr/employees for HR.
      */
-    public function getPanelSlugAttribute(): ?string
+    public function getUrlPrefixAttribute(): string
     {
-        return $this->hasPermission('users.manage') ? config("permissions.roles.{$this->role}.panel.slug") : null;
+        return config("permissions.roles.{$this->role}.prefix", 'employee');
     }
 
     /**
-     * Where this user lands after logging in: their dashboard if they have one, otherwise the employee list,
-     * or (Employee role) their own Employee Dashboard.
+     * The management area's prefix: "admin" or "hr", null for roles without one (Manager, Employee).
+     */
+    public function getPanelSlugAttribute(): ?string
+    {
+        return $this->hasPermission('users.manage') ? $this->url_prefix : null;
+    }
+
+    /**
+     * Where this user lands after logging in: the dashboard (Admin, HR, Employee), or the employee list
+     * for a Manager. The prefix is passed explicitly: right after login, SetPanelPrefix has not run yet.
      */
     public function homeUrl(): string
     {
-        return match (true) {
-            (bool) $this->panel_slug => route('admin.dashboard', ['panel' => $this->panel_slug]),
-            $this->hasPermission('employees.view') => route('employees.index'),
-            default => route('employee.dashboard'), // Employee role: their own dashboard
-        };
+        $prefix = ['panel' => $this->url_prefix];
+
+        return ! $this->panel_slug && $this->hasPermission('employees.view')
+            ? route('employees.index', $prefix)
+            : route('dashboard', $prefix);
     }
 
     public function getPanelIconAttribute(): string

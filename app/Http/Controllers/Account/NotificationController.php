@@ -27,6 +27,12 @@ class NotificationController extends Controller
         $notification = $request->user()->notifications()->findOrFail($notification);
         $notification->markAsRead();
 
+        // Build the link from the id with the reader's own prefix (/hr/…, /manager/…), never a stored URL:
+        // the employee who sent the request has another prefix, and URLs may change.
+        if (isset($notification->data['leave_request_id'])) {
+            return redirect()->route('leave-requests.show', $notification->data['leave_request_id']);
+        }
+
         return redirect()->to($notification->data['url'] ?? route('notifications.index'));
     }
 

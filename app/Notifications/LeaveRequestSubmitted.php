@@ -36,8 +36,7 @@ class LeaveRequestSubmitted extends Notification
             'message' => "{$leave->employee->full_name} asked for {$leave->days_label}: {$leave->period_text}.",
             'icon' => 'bi-calendar-plus',
             'color' => 'warning',
-            // Relative, so it keeps working if the site moves (opened with url()).
-            'url' => route('leave-requests.show', $leave, false),
+            // Opened through NotificationController::open(), which builds the link with the reader's prefix.
             'leave_request_id' => $leave->id,
         ];
     }

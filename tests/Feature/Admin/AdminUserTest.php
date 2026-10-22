@@ -28,7 +28,7 @@ class AdminUserTest extends TestCase
         Employee::factory(3)->inDepartment('Sales')->create();
         User::factory()->create(['name' => 'Vera Viewer']);
 
-        $this->get(route('admin.dashboard'))
+        $this->get(route('dashboard'))
             ->assertOk()
             ->assertSee('Main Admin')
             ->assertSee('Vera Viewer')
@@ -118,7 +118,7 @@ class AdminUserTest extends TestCase
             $this->assertTrue($hr->can($permission), "HR should have {$permission}");
         }
 
-        $this->get(route('admin.dashboard'))
+        $this->get(route('dashboard'))
             ->assertOk()
             ->assertSee('Helen HR')
             ->assertSee('Mona Manager')
@@ -138,15 +138,15 @@ class AdminUserTest extends TestCase
         $viewer = User::factory()->create();
         $this->actingAs($hr);
 
-        $this->assertSame(url('/hr/dashboard'), route('admin.dashboard'));
+        $this->assertSame(url('/hr/dashboard'), route('dashboard'));
         $this->get(url('/admin'))->assertNotFound();
         $this->get(url('/admin/users/create'))->assertNotFound();
 
-        foreach ([route('admin.dashboard'), route('admin.users.create'), route('admin.users.edit', $viewer), route('employees.index'), route('account.edit')] as $url) {
+        foreach ([route('dashboard'), route('admin.users.create'), route('admin.users.edit', $viewer), route('employees.index'), route('account.edit')] as $url) {
             $this->get($url)->assertOk()->assertDontSee('Admin');
         }
 
-        $this->get(route('admin.dashboard'))->assertSee('HR Dashboard');
+        $this->get(route('dashboard'))->assertSee('HR Dashboard');
     }
 
     public function test_sidebar_shows_profile_and_role_based_menu(): void
@@ -171,8 +171,8 @@ class AdminUserTest extends TestCase
         $this->actingAs(User::factory()->create(['name' => 'Eve Employee']));
         $sidebar = Str::between($this->get(route('profile.show'))->assertSee('Eve Employee')->getContent(), '<aside', '</aside>');
         $this->assertStringContainsString('My Profile', $sidebar);
-        $this->assertStringContainsString(route('employee.dashboard'), $sidebar); // their own dashboard
-        foreach (['Manage Employees', 'Manage Users', 'Manage Departments', route('admin.dashboard', ['panel' => 'admin'])] as $item) {
+        $this->assertStringContainsString(route('dashboard'), $sidebar); // their own dashboard
+        foreach (['Manage Employees', 'Manage Users', 'Manage Departments', route('dashboard', ['panel' => 'admin'])] as $item) {
             $this->assertStringNotContainsString($item, $sidebar);
         }
     }
@@ -235,7 +235,7 @@ class AdminUserTest extends TestCase
     {
         $hr = User::factory()->hr()->create(['name' => 'Helen HR']);
 
-        $this->get(route('admin.dashboard'))
+        $this->get(route('dashboard'))
             ->assertSee('Helen HR')
             ->assertViewHas('roles', fn ($roles) => array_keys($roles) === ['admin', 'hr', 'manager', 'employee']);
         $this->get(route('admin.users.edit', $hr))->assertOk();

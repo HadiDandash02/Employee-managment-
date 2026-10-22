@@ -130,7 +130,7 @@ class SoftDeleteTest extends TestCase
         $this->deleteJson(route('employees.trash.force'), ['ids' => ['abc']])->assertUnprocessable();
 
         // "trash" is not treated as an employee id
-        $this->assertSame(url('/employees/trash/restore'), route('employees.trash.restore'));
+        $this->assertStringEndsWith('/employees/trash/restore', route('employees.trash.restore'));
         $this->get(route('employees.index'))->assertSee('Empty trash')->assertSee('Restore selected')->assertSee('Delete forever');
     }
 
@@ -183,7 +183,7 @@ class SoftDeleteTest extends TestCase
         Employee::factory(2)->inDepartment('Sales')->create();
         Employee::factory()->inDepartment('Sales')->create()->delete();
 
-        $this->get(route('admin.dashboard'))
+        $this->get(route('dashboard'))
             ->assertViewHas('stats', fn ($stats) => $stats['employees'] === 2)
             ->assertViewHas('departments', fn ($departments) => $departments->first()->employees_count === 2);
     }

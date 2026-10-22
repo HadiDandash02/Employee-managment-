@@ -8,24 +8,25 @@ use Illuminate\Support\Facades\URL;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * The management area lives at /{panel}: /admin for admins, /hr for HR.
+ * Every logged-in page lives under the user's role: /admin/..., /hr/..., /manager/..., /employee/...
+ * (config/permissions.php "prefix", the {panel} part of the routes).
  *
- * - route('admin.dashboard') etc. automatically use the logged-in user's own prefix.
- * - Opening another role's prefix (e.g. HR opening /admin) is a 404, so HR never sees Admin pages.
+ * - route('employees.index') etc. automatically use the logged-in user's own prefix.
+ * - Opening another role's prefix (e.g. HR opening /admin/...) is a 404, so nobody sees another role's area.
  */
 class SetPanelPrefix
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $slug = $request->user()?->panel_slug;
+        $prefix = $request->user()?->url_prefix;
 
-        if ($slug) {
-            URL::defaults(['panel' => $slug]);
+        if ($prefix) {
+            URL::defaults(['panel' => $prefix]);
         }
 
         $route = $request->route();
         if ($route && $route->hasParameter('panel')) {
-            abort_unless($slug !== null && $route->parameter('panel') === $slug, 404);
+            abort_unless($prefix !== null && $route->parameter('panel') === $prefix, 404);
 
             // Controllers don't need it; remove it so it isn't passed to their methods.
             $route->forgetParameter('panel');

@@ -14,9 +14,9 @@ class AuthTest extends TestCase
 
     public function test_guests_are_redirected_to_login(): void
     {
-        $this->get(route('employees.index'))->assertRedirect(route('login'));
+        $this->get(route('employees.index', ['panel' => 'hr']))->assertRedirect(route('login'));
         $this->get(url('/admin'))->assertRedirect(route('login'));
-        $this->getJson(route('employees.data'))->assertUnauthorized();
+        $this->getJson(route('employees.data', ['panel' => 'hr']))->assertUnauthorized();
     }
 
     public function test_login_page_is_shown(): void
@@ -29,14 +29,14 @@ class AuthTest extends TestCase
         $user = User::factory()->manager()->create(['username' => 'jane', 'email' => 'jane@example.com', 'password' => 'secret-pass']);
 
         $this->post(route('login.store'), ['login' => 'jane', 'password' => 'secret-pass'])
-            ->assertRedirect(route('employees.index'));
+            ->assertRedirect(url('/manager/employees'));
         $this->assertAuthenticatedAs($user);
 
         $this->post(route('logout'))->assertRedirect(route('login'));
         $this->assertGuest();
 
         $this->post(route('login.store'), ['login' => 'jane@example.com', 'password' => 'secret-pass'])
-            ->assertRedirect(route('employees.index'));
+            ->assertRedirect(url('/manager/employees'));
         $this->assertAuthenticatedAs($user);
     }
 
@@ -93,8 +93,8 @@ class AuthTest extends TestCase
     {
         $this->actingAs(User::factory()->admin()->create())->get('/')->assertRedirect(url('/admin/dashboard'));
         $this->actingAs(User::factory()->hr()->create())->get('/')->assertRedirect(url('/hr/dashboard'));
-        $this->actingAs(User::factory()->manager()->create())->get('/')->assertRedirect(route('employees.index'));
-        $this->actingAs(User::factory()->create())->get('/')->assertRedirect(route('employee.dashboard')); // Employee role
+        $this->actingAs(User::factory()->manager()->create())->get('/')->assertRedirect(url('/manager/employees'));
+        $this->actingAs(User::factory()->create())->get('/')->assertRedirect(route('dashboard')); // Employee role
     }
 
     public function test_hr_logs_in_to_the_hr_dashboard(): void

@@ -63,7 +63,7 @@ class EmployeeAuthorizationTest extends TestCase
 
             // Even their own record: a full edit (salary, department) is HR work.
             foreach ([$own, $this->support] as $target) {
-                $this->get(url("/employees/{$target->id}/edit"))->assertForbidden();
+                $this->get(url("/{$role}/employees/{$target->id}/edit"))->assertForbidden();
                 $this->put(route('employees.update', $target), ['salary' => 1])->assertForbidden();
                 $this->delete(route('employees.destroy', $target))->assertForbidden();
             }

@@ -26,15 +26,15 @@ class EmployeeDashboardTest extends TestCase
 
     public function test_guest_is_redirected_to_login(): void
     {
-        $this->get(route('employee.dashboard'))->assertRedirect(route('login'));
+        $this->get(route('dashboard', ['panel' => 'employee']))->assertRedirect(route('login'));
     }
 
     public function test_active_employee_sees_the_dashboard(): void
     {
         $this->actingAs($this->employeeUser());
 
-        $this->assertSame(url('/employee/dashboard'), route('employee.dashboard'));
-        $this->get(route('employee.dashboard'))
+        $this->assertSame(url('/employee/dashboard'), route('dashboard'));
+        $this->get(route('dashboard'))
             ->assertOk()
             ->assertSee('Welcome, Olivia')
             ->assertSee('Sales')
@@ -45,7 +45,7 @@ class EmployeeDashboardTest extends TestCase
     {
         $this->actingAs($this->employeeUser(['is_active' => false]));
 
-        $this->get(route('employee.dashboard'))->assertForbidden()->assertSee('Your account is suspended');
+        $this->get(route('dashboard'))->assertForbidden()->assertSee('Your account is suspended');
         $this->get(route('profile.show'))->assertForbidden();
         $this->get(route('account.edit'))->assertOk(); // can still change their password
     }
@@ -55,7 +55,7 @@ class EmployeeDashboardTest extends TestCase
         $this->employeeUser(['username' => 'olivia', 'password' => 'secret-pass']);
 
         $this->post(route('login.store'), ['login' => 'olivia', 'password' => 'secret-pass'])
-            ->assertRedirect(route('employee.dashboard'));
+            ->assertRedirect(url('/employee/dashboard'));
     }
 
     public function test_users_without_the_permission_cannot_open_it(): void
@@ -63,7 +63,7 @@ class EmployeeDashboardTest extends TestCase
         // Admin has every permission; this just checks the route is protected by "can:" too.
         $this->actingAs(User::factory()->create(['role' => 'unknown-role']));
 
-        $this->get(route('employee.dashboard'))->assertForbidden();
+        $this->get(route('dashboard'))->assertForbidden();
     }
 
     public function test_middleware_blocks_inactive_and_lets_active_users_through(): void

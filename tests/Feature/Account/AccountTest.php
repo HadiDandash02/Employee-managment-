@@ -74,6 +74,6 @@ class AccountTest extends TestCase
 
     public function test_guests_cannot_open_my_account(): void
     {
-        $this->get(route('account.edit'))->assertRedirect(route('login'));
+        $this->get(route('account.edit', ['panel' => 'employee']))->assertRedirect(route('login'));
     }
 }

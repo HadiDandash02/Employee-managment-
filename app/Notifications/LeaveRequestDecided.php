@@ -40,7 +40,6 @@ class LeaveRequestDecided extends Notification
                 .($this->comment ? " Comment: {$this->comment}" : ''),
             'icon' => $status === LeaveStatus::Approved ? 'bi-check-circle' : 'bi-x-circle',
             'color' => $status->color(),
-            'url' => route('leave-requests.show', $leave, false),
             'leave_request_id' => $leave->id,
         ];
     }

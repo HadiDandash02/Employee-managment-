@@ -222,18 +222,12 @@
 
         <nav class="sidebar-nav">
             <div class="nav-section">Menu</div>
-            @can('users.manage')
-                <a href="{{ route('admin.dashboard') }}" class="side-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-                    <i class="bi bi-grid-1x2"></i> Dashboard
-                </a>
-            @endcan
+            {{-- /admin/dashboard, /hr/dashboard, /manager/dashboard, /employee/dashboard: the right one for the role --}}
+            <a href="{{ route('dashboard') }}" class="side-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                <i class="bi bi-grid-1x2"></i> Dashboard
+            </a>
             {{-- Own employee record: always for the Employee role, for others only when their login is linked --}}
             @if ($me->can('profile.view-own') && ($me->employee_id || $me->cannot('employees.view')))
-                @cannot('users.manage')
-                    <a href="{{ route('employee.dashboard') }}" class="side-link {{ request()->routeIs('employee.dashboard') ? 'active' : '' }}">
-                        <i class="bi bi-grid-1x2"></i> Dashboard
-                    </a>
-                @endcannot
                 <a href="{{ route('profile.show') }}" class="side-link {{ request()->routeIs('profile.show') ? 'active' : '' }}">
                     <i class="bi bi-person-vcard"></i> My Profile
                 </a>
