@@ -10,6 +10,7 @@ enum LeaveAction: string
     case Submitted = 'submitted';
     case Approved = 'approved';
     case Rejected = 'rejected';
+    case Cancelled = 'cancelled';
 
     public function label(): string
     {
@@ -17,6 +18,7 @@ enum LeaveAction: string
             self::Submitted => 'Submitted',
             self::Approved => 'Approved',
             self::Rejected => 'Rejected',
+            self::Cancelled => 'Cancelled',
         };
     }
 
@@ -26,6 +28,7 @@ enum LeaveAction: string
             self::Submitted => 'bi-send',
             self::Approved => 'bi-check-circle-fill text-success',
             self::Rejected => 'bi-x-circle-fill text-danger',
+            self::Cancelled => 'bi-slash-circle text-secondary',
         };
     }
 }

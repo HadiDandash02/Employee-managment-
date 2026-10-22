@@ -68,6 +68,7 @@ Route::middleware([...$loggedIn, 'active'])->group(function () {
     Route::get('/leave-requests/{leaveRequest}', [LeaveRequestController::class, 'show'])->can('view', 'leaveRequest')->name('leave-requests.show');
     Route::post('/leave-requests/{leaveRequest}/approve', [LeaveRequestController::class, 'approve'])->can('approve', 'leaveRequest')->name('leave-requests.approve');
     Route::post('/leave-requests/{leaveRequest}/reject', [LeaveRequestController::class, 'reject'])->can('approve', 'leaveRequest')->name('leave-requests.reject');
+    Route::post('/leave-requests/{leaveRequest}/cancel', [LeaveRequestController::class, 'cancel'])->can('cancel', 'leaveRequest')->name('leave-requests.cancel');
 });
 
 // Staff Routes: Manage Employees (Admin, HR, Manager)

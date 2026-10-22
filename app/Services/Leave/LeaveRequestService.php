@@ -113,14 +113,41 @@ class LeaveRequestService
         return $leaveRequest;
     }
 
-    public function approve(LeaveRequest $leaveRequest, User $approver, ?string $note = null): LeaveRequest
+    public function approve(LeaveRequest $leaveRequest, User $approver, ?string $comment = null): LeaveRequest
     {
-        return $this->decide($leaveRequest, $approver, LeaveStatus::Approved, LeaveAction::Approved, $note);
+        return $this->decide($leaveRequest, $approver, LeaveStatus::Approved, LeaveAction::Approved, $comment);
     }
 
-    public function reject(LeaveRequest $leaveRequest, User $approver, string $note): LeaveRequest
+    public function reject(LeaveRequest $leaveRequest, User $approver, string $comment): LeaveRequest
     {
-        return $this->decide($leaveRequest, $approver, LeaveStatus::Rejected, LeaveAction::Rejected, $note);
+        return $this->decide($leaveRequest, $approver, LeaveStatus::Rejected, LeaveAction::Rejected, $comment);
+    }
+
+    /**
+     * The employee withdraws their own request. Only while it is pending: an approved leave
+     * must be handled by HR, a rejected or cancelled one is already closed.
+     * The days it reserved become available again (LeaveBalanceService counts pending + approved only).
+     */
+    public function cancel(LeaveRequest $leaveRequest, User $by): LeaveRequest
+    {
+        // Only the employee who asked (LeaveRequestPolicy::cancel); the route checks it too.
+        Gate::forUser($by)->authorize('cancel', $leaveRequest);
+
+        return DB::transaction(function () use ($leaveRequest, $by) {
+            $locked = LeaveRequest::whereKey($leaveRequest->getKey())->lockForUpdate()->firstOrFail();
+
+            if ($locked->status !== LeaveStatus::Pending) {
+                throw new BusinessRuleException("Only a pending request can be cancelled. This one is already {$locked->status->label()}.");
+            }
+
+            $from = $locked->status;
+            $locked->status = LeaveStatus::Cancelled;
+            $locked->save();
+
+            $this->record($locked, LeaveAction::Cancelled, $from, $by);
+
+            return $locked;
+        });
     }
 
     /**
@@ -131,7 +158,7 @@ class LeaveRequestService
      *   4. approving cannot go over the leave the employee has earned that year.
      * Afterwards the employee is notified.
      */
-    private function decide(LeaveRequest $leaveRequest, User $approver, LeaveStatus $to, LeaveAction $action, ?string $note): LeaveRequest
+    private function decide(LeaveRequest $leaveRequest, User $approver, LeaveStatus $to, LeaveAction $action, ?string $comment): LeaveRequest
     {
         // 1. Authorization (403). The route checks it too; here it protects every other caller.
         Gate::forUser($approver)->authorize('approve', $leaveRequest);
@@ -141,7 +168,7 @@ class LeaveRequestService
             throw new BusinessRuleException('You cannot approve or reject your own leave request.');
         }
 
-        $decided = DB::transaction(function () use ($leaveRequest, $approver, $to, $action, $note) {
+        $decided = DB::transaction(function () use ($leaveRequest, $approver, $to, $action, $comment) {
             // Read the row again and LOCK it until COMMIT: if two managers click at the same moment,
             // the second one waits, then sees the new status and is refused by rule 3.
             $locked = LeaveRequest::whereKey($leaveRequest->getKey())->lockForUpdate()->firstOrFail();
@@ -170,14 +197,14 @@ class LeaveRequestService
             $locked->approved_at = now();
             $locked->save();
 
-            $this->record($locked, $action, $from, $approver, $note);
+            $this->record($locked, $action, $from, $approver, $comment);
 
             return $locked;
         });
 
         // The employee's login (users.employee_id), if they have one.
         $decided->load(['approver', 'employee.user']);
-        $decided->employee?->user?->notify(new LeaveRequestDecided($decided, $note));
+        $decided->employee?->user?->notify(new LeaveRequestDecided($decided, $comment));
 
         return $decided;
     }
@@ -204,14 +231,14 @@ class LeaveRequestService
     /**
      * Add one history row (leave_request_actions).
      */
-    private function record(LeaveRequest $leaveRequest, LeaveAction $action, ?LeaveStatus $from, User $by, ?string $note = null): void
+    private function record(LeaveRequest $leaveRequest, LeaveAction $action, ?LeaveStatus $from, User $by, ?string $comment = null): void
     {
         $leaveRequest->actions()->create([
             'user_id' => $by->id,
             'action' => $action,
             'from_status' => $from,
             'to_status' => $leaveRequest->status,
-            'note' => $note,
+            'comment' => $comment,
         ]);
     }
 }

@@ -30,7 +30,9 @@ class LeaveRequestController extends Controller
     public function index(Request $request, LeaveBalanceService $balances)
     {
         $status = LeaveStatus::tryFrom((string) $request->query('status'));
-        $visible = LeaveRequest::visibleTo($request->user());
+        $search = trim((string) $request->query('search'));
+        // Only the rows this user may see (LeaveRequestPolicy), then the search; the tabs count these.
+        $visible = LeaveRequest::visibleTo($request->user())->search($search);
         $employee = $request->user()->employee;
 
         return view('leave.index', [
@@ -44,6 +46,7 @@ class LeaveRequestController extends Controller
                 ->paginate(15)
                 ->withQueryString(),
             'status' => $status,
+            'search' => $search,
             // One query for all tab counts: [pending => 3, approved => 5, …]
             'counts' => (clone $visible)->toBase()->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status'),
         ]);
@@ -76,15 +79,22 @@ class LeaveRequestController extends Controller
 
     public function approve(DecideLeaveRequestRequest $request, LeaveRequest $leaveRequest)
     {
-        $this->leaveRequests->approve($leaveRequest, $request->user(), $request->validated('note'));
+        $this->leaveRequests->approve($leaveRequest, $request->user(), $request->validated('comment'));
 
         return redirect()->route('leave-requests.show', $leaveRequest)->with('success', 'Leave request approved.');
     }
 
     public function reject(DecideLeaveRequestRequest $request, LeaveRequest $leaveRequest)
     {
-        $this->leaveRequests->reject($leaveRequest, $request->user(), $request->validated('note'));
+        $this->leaveRequests->reject($leaveRequest, $request->user(), $request->validated('comment'));
 
         return redirect()->route('leave-requests.show', $leaveRequest)->with('success', 'Leave request rejected.');
+    }
+
+    public function cancel(Request $request, LeaveRequest $leaveRequest)
+    {
+        $this->leaveRequests->cancel($leaveRequest, $request->user());
+
+        return redirect()->route('leave-requests.index')->with('success', 'Your leave request was cancelled. The days are available again.');
     }
 }

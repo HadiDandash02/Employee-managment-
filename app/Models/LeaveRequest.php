@@ -163,6 +163,26 @@ class LeaveRequest extends Model
     }
 
     /**
+     * Search by the employee's name or the reason. Every word must match, so "sam trip" works.
+     */
+    public function scopeSearch(Builder $query, ?string $term): Builder
+    {
+        $words = preg_split('/\s+/', trim((string) $term), -1, PREG_SPLIT_NO_EMPTY);
+
+        foreach ($words as $word) {
+            $like = '%'.addcslashes($word, '%_\\').'%';
+
+            $query->where(fn (Builder $q) => $q
+                ->where('reason', 'like', $like)
+                ->orWhereHas('employee', fn (Builder $e) => $e
+                    ->where('first_name', 'like', $like)
+                    ->orWhere('last_name', 'like', $like)));
+        }
+
+        return $query;
+    }
+
+    /**
      * Requests of one employee whose dates overlap start–end (both ends included).
      */
     public function scopeOverlapping(Builder $query, int $employeeId, string $start, string $end): Builder

@@ -96,7 +96,7 @@ class LeaveRequestServiceTest extends TestCase
         $this->assertSame(LeaveAction::Approved, $action->action);
         $this->assertSame(LeaveStatus::Pending, $action->from_status);
         $this->assertSame(LeaveStatus::Approved, $action->to_status);
-        $this->assertSame('Enjoy', $action->note);
+        $this->assertSame('Enjoy', $action->comment);
     }
 
     public function test_cannot_approve_an_already_approved_request(): void
@@ -238,7 +238,7 @@ class LeaveRequestServiceTest extends TestCase
         Notification::assertSentTo($requester, LeaveRequestDecided::class, function (LeaveRequestDecided $notification) use ($requester) {
             $data = $notification->toArray($requester);
 
-            return $data['title'] === 'Leave request rejected' && str_contains($data['message'], 'Note: Busy week');
+            return $data['title'] === 'Leave request rejected' && str_contains($data['message'], 'Comment: Busy week');
         });
     }
 
@@ -263,6 +263,6 @@ class LeaveRequestServiceTest extends TestCase
         $this->service->reject($leave, $this->manager, 'Busy season');
 
         $this->assertSame(LeaveStatus::Rejected, $leave->fresh()->status);
-        $this->assertDatabaseHas('leave_request_actions', ['leave_request_id' => $leave->id, 'action' => 'rejected', 'note' => 'Busy season']);
+        $this->assertDatabaseHas('leave_request_actions', ['leave_request_id' => $leave->id, 'action' => 'rejected', 'comment' => 'Busy season']);
     }
 }

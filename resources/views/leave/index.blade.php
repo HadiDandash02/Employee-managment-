@@ -41,23 +41,36 @@
     @endif
 
     <div class="panel">
-        <div class="panel-header">
-            {{-- Status tabs, with the number of requests in each --}}
+        <div class="panel-header flex-wrap">
+            {{-- Status tabs, with the number of requests in each (the search is kept when switching) --}}
             <ul class="nav nav-pills small gap-1">
                 <li class="nav-item">
-                    <a href="{{ route('leave-requests.index') }}" class="nav-link py-1 px-3 {{ $status ? '' : 'active' }}">
+                    <a href="{{ route('leave-requests.index', array_filter(['search' => $search])) }}" class="nav-link py-1 px-3 {{ $status ? '' : 'active' }}">
                         All <span class="badge rounded-pill text-bg-light border ms-1">{{ $total }}</span>
                     </a>
                 </li>
                 @foreach (App\Enums\LeaveStatus::cases() as $case)
                     <li class="nav-item">
-                        <a href="{{ route('leave-requests.index', ['status' => $case->value]) }}"
+                        <a href="{{ route('leave-requests.index', array_filter(['status' => $case->value, 'search' => $search])) }}"
                            class="nav-link py-1 px-3 {{ $status === $case ? 'active' : '' }}">
                             {{ $case->label() }} <span class="badge rounded-pill text-bg-light border ms-1">{{ $counts[$case->value] ?? 0 }}</span>
                         </a>
                     </li>
                 @endforeach
             </ul>
+
+            {{-- Search (GET), keeping the chosen status --}}
+            <form method="GET" action="{{ route('leave-requests.index') }}" class="d-flex gap-2" role="search">
+                @if ($status)
+                    <input type="hidden" name="status" value="{{ $status->value }}">
+                @endif
+                <input type="search" name="search" value="{{ $search }}" class="form-control form-control-sm"
+                       placeholder="{{ $reviewer ? 'Search employee or reason' : 'Search reason' }}" aria-label="Search leave requests" style="min-width: 14rem">
+                <button type="submit" class="btn btn-sm btn-soft" aria-label="Search"><i class="bi bi-search"></i></button>
+                @if ($search !== '')
+                    <a href="{{ route('leave-requests.index', array_filter(['status' => $status?->value])) }}" class="btn btn-sm btn-clear">Clear</a>
+                @endif
+            </form>
         </div>
 
         <div class="table-responsive">
@@ -124,7 +137,11 @@
                         <tr>
                             <td colspan="8" class="text-center text-muted py-5">
                                 <i class="bi bi-calendar-x fs-2 d-block mb-1 opacity-50"></i>
-                                {{ $status ? 'No '.strtolower($status->label()).' leave requests.' : 'No leave requests yet.' }}
+                                @if ($search !== '')
+                                    No leave requests match &ldquo;{{ $search }}&rdquo;.
+                                @else
+                                    {{ $status ? 'No '.strtolower($status->label()).' leave requests.' : 'No leave requests yet.' }}
+                                @endif
                             </td>
                         </tr>
                     @endforelse

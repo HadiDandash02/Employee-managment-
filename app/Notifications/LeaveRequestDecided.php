@@ -13,7 +13,7 @@ class LeaveRequestDecided extends Notification
 {
     public function __construct(
         private LeaveRequest $leaveRequest,
-        private ?string $note = null,
+        private ?string $comment = null,
     ) {
     }
 
@@ -37,7 +37,7 @@ class LeaveRequestDecided extends Notification
         return [
             'title' => "Leave request {$word}",
             'message' => "Your leave {$leave->period_text} ({$leave->days_label}) was {$word} by {$leave->approver?->name}."
-                .($this->note ? " Note: {$this->note}" : ''),
+                .($this->comment ? " Comment: {$this->comment}" : ''),
             'icon' => $status === LeaveStatus::Approved ? 'bi-check-circle' : 'bi-x-circle',
             'color' => $status->color(),
             'url' => route('leave-requests.show', $leave, false),

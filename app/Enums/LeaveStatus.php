@@ -13,6 +13,7 @@ enum LeaveStatus: string
     case Pending = 'pending';
     case Approved = 'approved';
     case Rejected = 'rejected';
+    case Cancelled = 'cancelled'; // withdrawn by the employee while it was still pending
 
     public function label(): string
     {
@@ -20,6 +21,7 @@ enum LeaveStatus: string
             self::Pending => 'Pending',
             self::Approved => 'Approved',
             self::Rejected => 'Rejected',
+            self::Cancelled => 'Cancelled',
         };
     }
 
@@ -32,6 +34,7 @@ enum LeaveStatus: string
             self::Pending => 'warning',
             self::Approved => 'success',
             self::Rejected => 'danger',
+            self::Cancelled => 'secondary',
         };
     }
 
@@ -41,6 +44,7 @@ enum LeaveStatus: string
             self::Pending => 'bi-hourglass-split',
             self::Approved => 'bi-check-circle',
             self::Rejected => 'bi-x-circle',
+            self::Cancelled => 'bi-slash-circle',
         };
     }
 }

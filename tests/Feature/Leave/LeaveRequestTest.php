@@ -87,7 +87,7 @@ class LeaveRequestTest extends TestCase
         $this->get(route('leave-requests.index'))->assertOk()->assertSee('Sam')->assertSee('Review');
         $this->get(route('leave-requests.show', $leave))->assertOk()->assertSee('Approve');
 
-        $this->post(route('leave-requests.approve', $leave), ['note' => 'OK'])
+        $this->post(route('leave-requests.approve', $leave), ['comment' => 'OK'])
             ->assertRedirect(route('leave-requests.show', $leave));
 
         $leave->refresh();
@@ -97,7 +97,7 @@ class LeaveRequestTest extends TestCase
 
         // Clicking again (or a second tab): refused with a message, nothing changes.
         $this->from(route('leave-requests.show', $leave))
-            ->post(route('leave-requests.reject', $leave), ['note' => 'Changed my mind'])
+            ->post(route('leave-requests.reject', $leave), ['comment' => 'Changed my mind'])
             ->assertSessionHasErrors(['business' => 'This leave request is already Approved.']);
         $this->assertSame(LeaveStatus::Approved, $leave->fresh()->status);
     }
@@ -107,8 +107,8 @@ class LeaveRequestTest extends TestCase
         $leave = LeaveRequest::factory()->create(['employee_id' => $this->sam->id]);
         $this->actingAs($this->salesManager);
 
-        $this->post(route('leave-requests.reject', $leave), ['note' => ''])->assertSessionHasErrors('note');
-        $this->post(route('leave-requests.reject', $leave), ['note' => 'Busy week'])->assertRedirect();
+        $this->post(route('leave-requests.reject', $leave), ['comment' => ''])->assertSessionHasErrors('comment');
+        $this->post(route('leave-requests.reject', $leave), ['comment' => 'Busy week'])->assertRedirect();
 
         $this->assertSame(LeaveStatus::Rejected, $leave->fresh()->status);
     }
@@ -172,6 +172,96 @@ class LeaveRequestTest extends TestCase
         $this->get(route('leave-requests.index'))->assertOk()->assertDontSee('Request leave</a>', false);
         $this->get(route('leave-requests.create'))->assertForbidden();
         $this->post(route('leave-requests.store'), ['start_date' => '2026-12-01', 'end_date' => '2026-12-01', 'reason' => 'x'])->assertForbidden();
+    }
+
+    public function test_employee_cancels_their_own_pending_request(): void
+    {
+        $leave = LeaveRequest::factory()->create(['employee_id' => $this->sam->id]);
+        $this->actingAs($this->samLogin);
+
+        $this->get(route('leave-requests.show', $leave))->assertSee('Cancel request');
+        $this->post(route('leave-requests.cancel', $leave))
+            ->assertRedirect(route('leave-requests.index'))
+            ->assertSessionHas('success', 'Your leave request was cancelled. The days are available again.');
+
+        $this->assertSame(LeaveStatus::Cancelled, $leave->fresh()->status);
+        $this->assertDatabaseHas('leave_request_actions', [
+            'leave_request_id' => $leave->id, 'user_id' => $this->samLogin->id, 'action' => 'cancelled', 'from_status' => 'pending', 'to_status' => 'cancelled',
+        ]);
+
+        // A cancelled request no longer reserves days, and the "Cancelled" tab lists it.
+        $this->assertSame(0.0, app(\App\Services\Leave\LeaveBalanceService::class)->for($this->sam, $leave->start_date->year)->pending);
+        $this->get(route('leave-requests.index', ['status' => 'cancelled']))->assertSee($leave->reason);
+    }
+
+    public function test_only_pending_requests_can_be_cancelled(): void
+    {
+        $leave = LeaveRequest::factory()->approved()->create(['employee_id' => $this->sam->id]);
+        $this->actingAs($this->samLogin);
+
+        $this->get(route('leave-requests.show', $leave))->assertDontSee('Cancel request');
+        $this->from(route('leave-requests.show', $leave))
+            ->post(route('leave-requests.cancel', $leave))
+            ->assertSessionHasErrors(['business' => 'Only a pending request can be cancelled. This one is already Approved.']);
+
+        $this->assertSame(LeaveStatus::Approved, $leave->fresh()->status);
+    }
+
+    public function test_nobody_else_can_cancel_a_request_not_even_hr(): void
+    {
+        $leave = LeaveRequest::factory()->create(['employee_id' => $this->sam->id]);
+        $colleague = User::factory()->create(['employee_id' => Employee::factory()->create(['department_id' => $this->sam->department_id])->id]);
+
+        // HR sees everything, but withdrawing someone's leave is not part of HR's rights.
+        foreach ([$colleague, $this->salesManager, User::factory()->hr()->create()] as $user) {
+            $this->actingAs($user)->post(route('leave-requests.cancel', $leave))->assertForbidden();
+        }
+
+        $this->assertSame(LeaveStatus::Pending, $leave->fresh()->status);
+    }
+
+    public function test_a_cancelled_request_cannot_be_approved(): void
+    {
+        $leave = LeaveRequest::factory()->create(['employee_id' => $this->sam->id, 'status' => LeaveStatus::Cancelled]);
+
+        $this->actingAs($this->salesManager)
+            ->from(route('leave-requests.show', $leave))
+            ->post(route('leave-requests.approve', $leave))
+            ->assertSessionHasErrors(['business' => 'This leave request is already Cancelled.']);
+    }
+
+    public function test_search_by_employee_name_or_reason_inside_the_visible_rows(): void
+    {
+        $sara = Employee::factory()->create(['first_name' => 'Sara', 'last_name' => 'Khoury', 'department_id' => $this->sam->department_id]);
+        LeaveRequest::factory()->create(['employee_id' => $this->sam->id, 'reason' => 'Wedding in Tripoli']);
+        LeaveRequest::factory()->create(['employee_id' => $sara->id, 'reason' => 'Dentist']);
+        LeaveRequest::factory()->create(['employee_id' => $this->tom->id, 'reason' => 'Wedding abroad']); // other department
+        $this->actingAs($this->salesManager);
+
+        $this->get(route('leave-requests.index', ['search' => 'khoury']))
+            ->assertOk()->assertSee('Dentist')->assertDontSee('Wedding in Tripoli');
+
+        // "wedding" matches two reasons, but Tom is outside this manager's team.
+        $this->get(route('leave-requests.index', ['search' => 'wedding']))
+            ->assertSee('Wedding in Tripoli')->assertDontSee('Wedding abroad')
+            ->assertViewHas('counts', fn ($counts) => $counts->sum() === 1);
+
+        $this->get(route('leave-requests.index', ['search' => 'nothing-matches']))->assertSee('No leave requests match');
+    }
+
+    public function test_search_and_status_filter_work_together_and_paginate(): void
+    {
+        LeaveRequest::factory()->count(17)->create(['employee_id' => $this->sam->id, 'reason' => 'Trip']);
+        LeaveRequest::factory()->approved()->create(['employee_id' => $this->sam->id, 'reason' => 'Trip approved']);
+        $this->actingAs($this->samLogin);
+
+        $this->get(route('leave-requests.index', ['status' => 'pending', 'search' => 'trip']))
+            ->assertOk()
+            ->assertViewHas('leaveRequests', fn ($page) => $page->total() === 17 && $page->count() === 15)
+            ->assertSee('status=pending', false);
+
+        $this->get(route('leave-requests.index', ['status' => 'pending', 'search' => 'trip', 'page' => 2]))
+            ->assertViewHas('leaveRequests', fn ($page) => $page->count() === 2);
     }
 
     public function test_suspended_users_are_blocked(): void

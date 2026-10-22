@@ -35,6 +35,16 @@ class LeaveRequestPolicy
     }
 
     /**
+     * Cancel (withdraw): ONLY the employee who asked. HR can see every request, but being HR
+     * does not give the right to withdraw someone else's leave; they approve or reject instead.
+     * "Only while pending" is a business rule: LeaveRequestService::cancel().
+     */
+    public function cancel(User $user, LeaveRequest $leaveRequest): bool
+    {
+        return $user->hasPermission('leave.request') && $leaveRequest->isOwnedBy($user);
+    }
+
+    /**
      * Approve or reject: HR for everyone, a Manager only for their own department.
      */
     public function approve(User $user, LeaveRequest $leaveRequest): bool

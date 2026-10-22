@@ -73,10 +73,10 @@
                     @csrf
                     <div class="panel-header"><h2 class="panel-title">Decision</h2></div>
                     <div class="panel-body">
-                        <label for="note" class="form-label">Note <span class="text-muted small">(required when rejecting)</span></label>
-                        <textarea id="note" name="note" rows="2" maxlength="500"
-                                  class="form-control @error('note') is-invalid @enderror">{{ old('note') }}</textarea>
-                        @error('note') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        <label for="comment" class="form-label">Comment <span class="text-muted small">(required when rejecting)</span></label>
+                        <textarea id="comment" name="comment" rows="2" maxlength="500"
+                                  class="form-control @error('comment') is-invalid @enderror">{{ old('comment') }}</textarea>
+                        @error('comment') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
                     <div class="panel-body border-top d-flex justify-content-end gap-2">
                         <button type="submit" formaction="{{ route('leave-requests.reject', $leaveRequest) }}" class="btn btn-outline-danger"
@@ -89,8 +89,22 @@
                     </div>
                 </form>
             @elseif ($leaveRequest->isPending() && $leaveRequest->isOwnedBy(auth()->user()))
-                <div class="alert alert-light border small mb-0">
-                    <i class="bi bi-hourglass-split me-1"></i> Waiting for your manager or HR. You cannot decide your own request.
+                <div class="panel">
+                    <div class="panel-body d-flex flex-wrap justify-content-between align-items-center gap-3">
+                        <div class="small">
+                            <i class="bi bi-hourglass-split me-1"></i> Waiting for your manager or HR. You cannot decide your own request.
+                            <div class="text-muted">Plans changed? You can cancel it while it is still pending.</div>
+                        </div>
+                        @can('cancel', $leaveRequest)
+                            <form method="POST" action="{{ route('leave-requests.cancel', $leaveRequest) }}"
+                                  onsubmit="return confirm('Cancel this leave request? The days become available again.')">
+                                @csrf
+                                <button type="submit" class="btn btn-outline-secondary">
+                                    <i class="bi bi-slash-circle me-1"></i> Cancel request
+                                </button>
+                            </form>
+                        @endcan
+                    </div>
                 </div>
             @endif
         </div>
@@ -114,8 +128,8 @@
                                         <span class="text-muted fw-normal">by {{ $action->user?->name ?? 'a deleted user' }}</span>
                                     </div>
                                     <div class="small text-muted">{{ $action->created_at?->format('d M Y H:i') }}</div>
-                                    @if ($action->note)
-                                        <div class="small mt-1 p-2 bg-light rounded" style="white-space: pre-line">{{ $action->note }}</div>
+                                    @if ($action->comment)
+                                        <div class="small mt-1 p-2 bg-light rounded" style="white-space: pre-line">{{ $action->comment }}</div>
                                     @endif
                                 </div>
                             </div>

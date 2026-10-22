@@ -17,7 +17,7 @@ class LeaveRequestAction extends Model
         'action',
         'from_status',
         'to_status',
-        'note',
+        'comment',
     ];
 
     protected function casts(): array
