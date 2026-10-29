@@ -37,14 +37,25 @@ class EmployeeController extends Controller implements HasMiddleware
 
     /**
      * GET /api/employees: 10 per page, with "links" and "meta" for the other pages (?page=2).
+     *
+     * ?search=jane doe   every word must match the first/last name, email or department name
+     * ?department_id=3   only that department (an unknown id is a 422, not an empty list)
      */
     public function index(Request $request)
     {
-        // visibleTo(): HR/Admin get everyone, a Manager only their own department.
+        $query = $request->validate([
+            'search' => ['nullable', 'string', 'max:100'],
+            'department_id' => ['nullable', 'integer', 'exists:departments,id'],
+        ]);
+
+        // visibleTo(): HR/Admin get everyone, a Manager only their own department; the filters can only narrow that.
         $employees = Employee::with('department')
             ->visibleTo($request->user())
+            ->search($query['search'] ?? null)
+            ->when($query['department_id'] ?? null, fn ($q, $departmentId) => $q->where('department_id', $departmentId))
             ->orderBy('id')
-            ->paginate(10);
+            ->paginate(10)
+            ->withQueryString(); // the "next"/"prev" links keep ?search and ?department_id
 
         return EmployeeResource::collection($employees);
     }

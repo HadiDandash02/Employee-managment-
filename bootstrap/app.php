@@ -4,6 +4,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -26,4 +27,12 @@ return Application::configure(basePath: dirname(__DIR__))
         // /api/* always answers errors as JSON (401, 403, 404, 422), even without an "Accept: application/json" header:
         // never a redirect to the login page or back to a form.
         $exceptions->shouldRenderJsonWhen(fn (Request $request) => $request->is('api/*') || $request->expectsJson());
+
+        // The standard API validation error: {"message": "The given data was invalid.", "errors": {"field": ["…"]}}.
+        // (Laravel 9+ would put the first error in "message"; the per-field messages in "errors" are unchanged.)
+        $exceptions->render(function (ValidationException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return response()->json(['message' => 'The given data was invalid.', 'errors' => $e->errors()], $e->status);
+            }
+        });
     })->create();
