@@ -15,6 +15,27 @@ enum LeaveStatus: string
     case Rejected = 'rejected';
     case Cancelled = 'cancelled'; // withdrawn by the employee while it was still pending
 
+    /**
+     * The allowed status changes, in ONE place (LeaveRequestService checks every change against it):
+     *
+     *   PENDING → APPROVED | REJECTED | CANCELLED
+     *   APPROVED, REJECTED, CANCELLED → nothing (final: e.g. APPROVED → REJECTED is blocked)
+     *
+     * @return list<self>
+     */
+    public function allowedTransitions(): array
+    {
+        return match ($this) {
+            self::Pending => [self::Approved, self::Rejected, self::Cancelled],
+            self::Approved, self::Rejected, self::Cancelled => [],
+        };
+    }
+
+    public function canTransitionTo(self $to): bool
+    {
+        return in_array($to, $this->allowedTransitions(), true);
+    }
+
     public function label(): string
     {
         return match ($this) {

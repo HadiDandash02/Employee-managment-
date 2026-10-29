@@ -98,7 +98,7 @@ class LeaveRequestTest extends TestCase
         // Clicking again (or a second tab): refused with a message, nothing changes.
         $this->from(route('leave-requests.show', $leave))
             ->post(route('leave-requests.reject', $leave), ['comment' => 'Changed my mind'])
-            ->assertSessionHasErrors(['business' => 'This leave request is already Approved.']);
+            ->assertSessionHasErrors(['business' => 'This leave request is already Approved: it cannot be rejected.']);
         $this->assertSame(LeaveStatus::Approved, $leave->fresh()->status);
     }
 
@@ -202,7 +202,7 @@ class LeaveRequestTest extends TestCase
         $this->get(route('leave-requests.show', $leave))->assertDontSee('Cancel request');
         $this->from(route('leave-requests.show', $leave))
             ->post(route('leave-requests.cancel', $leave))
-            ->assertSessionHasErrors(['business' => 'Only a pending request can be cancelled. This one is already Approved.']);
+            ->assertSessionHasErrors(['business' => 'This leave request is already Approved: it cannot be cancelled.']);
 
         $this->assertSame(LeaveStatus::Approved, $leave->fresh()->status);
     }
@@ -227,7 +227,7 @@ class LeaveRequestTest extends TestCase
         $this->actingAs($this->salesManager)
             ->from(route('leave-requests.show', $leave))
             ->post(route('leave-requests.approve', $leave))
-            ->assertSessionHasErrors(['business' => 'This leave request is already Cancelled.']);
+            ->assertSessionHasErrors(['business' => 'This leave request is already Cancelled: it cannot be approved.']);
     }
 
     public function test_search_by_employee_name_or_reason_inside_the_visible_rows(): void
@@ -251,13 +251,13 @@ class LeaveRequestTest extends TestCase
 
     public function test_search_and_status_filter_work_together_and_paginate(): void
     {
-        LeaveRequest::factory()->count(17)->create(['employee_id' => $this->sam->id, 'reason' => 'Trip']);
+        LeaveRequest::factory()->count(12)->create(['employee_id' => $this->sam->id, 'reason' => 'Trip']);
         LeaveRequest::factory()->approved()->create(['employee_id' => $this->sam->id, 'reason' => 'Trip approved']);
         $this->actingAs($this->samLogin);
 
         $this->get(route('leave-requests.index', ['status' => 'pending', 'search' => 'trip']))
             ->assertOk()
-            ->assertViewHas('leaveRequests', fn ($page) => $page->total() === 17 && $page->count() === 15)
+            ->assertViewHas('leaveRequests', fn ($page) => $page->total() === 12 && $page->count() === 10)
             ->assertSee('status=pending', false);
 
         $this->get(route('leave-requests.index', ['status' => 'pending', 'search' => 'trip', 'page' => 2]))

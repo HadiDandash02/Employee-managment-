@@ -103,7 +103,7 @@ class LeaveRequestServiceTest extends TestCase
     {
         $leave = LeaveRequest::factory()->approved()->create(['employee_id' => $this->worker->id]);
 
-        $this->expectExceptionObject(new BusinessRuleException('This leave request is already Approved.'));
+        $this->expectExceptionObject(new BusinessRuleException('This leave request is already Approved: it cannot be approved.'));
         $this->service->approve($leave, $this->manager);
     }
 
@@ -111,7 +111,7 @@ class LeaveRequestServiceTest extends TestCase
     {
         $leave = LeaveRequest::factory()->rejected()->create(['employee_id' => $this->worker->id]);
 
-        $this->expectExceptionObject(new BusinessRuleException('This leave request is already Rejected.'));
+        $this->expectExceptionObject(new BusinessRuleException('This leave request is already Rejected: it cannot be approved.'));
         $this->service->approve($leave, $this->manager);
     }
 

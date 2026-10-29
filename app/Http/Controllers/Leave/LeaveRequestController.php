@@ -43,7 +43,7 @@ class LeaveRequestController extends Controller
                 ->when($status, fn ($q) => $q->where('status', $status))
                 ->latest()
                 ->orderByDesc('id')
-                ->paginate(15)
+                ->paginate(10)
                 ->withQueryString(),
             'status' => $status,
             'search' => $search,

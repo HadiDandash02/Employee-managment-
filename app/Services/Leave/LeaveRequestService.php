@@ -136,9 +136,7 @@ class LeaveRequestService
         return DB::transaction(function () use ($leaveRequest, $by) {
             $locked = LeaveRequest::whereKey($leaveRequest->getKey())->lockForUpdate()->firstOrFail();
 
-            if ($locked->status !== LeaveStatus::Pending) {
-                throw new BusinessRuleException("Only a pending request can be cancelled. This one is already {$locked->status->label()}.");
-            }
+            $this->ensureTransition($locked, LeaveStatus::Cancelled);
 
             $from = $locked->status;
             $locked->status = LeaveStatus::Cancelled;
@@ -173,10 +171,8 @@ class LeaveRequestService
             // the second one waits, then sees the new status and is refused by rule 3.
             $locked = LeaveRequest::whereKey($leaveRequest->getKey())->lockForUpdate()->firstOrFail();
 
-            // 3. Only pending requests can be decided.
-            if ($locked->status !== LeaveStatus::Pending) {
-                throw new BusinessRuleException("This leave request is already {$locked->status->label()}.");
-            }
+            // 3. Only pending requests can be decided (APPROVED → REJECTED, CANCELLED → APPROVED, … are blocked).
+            $this->ensureTransition($locked, $to);
 
             // 4. Approving cannot go over what was earned (HR may have lowered the base since the request was sent).
             if ($to === LeaveStatus::Approved) {
@@ -226,6 +222,20 @@ class LeaveRequestService
             ->get()
             ->filter(fn (User $user) => ! $leaveRequest->isOwnedBy($user) && $user->can('approve', $leaveRequest))
             ->values();
+    }
+
+    /**
+     * Strict status transitions (LeaveStatus::allowedTransitions()): only PENDING may become
+     * APPROVED, REJECTED or CANCELLED. Any other change is refused, e.g. "already Approved: it cannot be rejected".
+     */
+    private function ensureTransition(LeaveRequest $leaveRequest, LeaveStatus $to): void
+    {
+        if (! $leaveRequest->status->canTransitionTo($to)) {
+            throw new BusinessRuleException(sprintf(
+                'This leave request is already %s: it cannot be %s.',
+                $leaveRequest->status->label(), strtolower($to->label()),
+            ));
+        }
     }
 
     /**
