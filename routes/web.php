@@ -60,7 +60,11 @@ Route::middleware($loggedIn)->prefix('{panel}')->where(['panel' => $prefixes])->
     // Notifications (the bell in the top bar)
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
+    // Before /notifications/{notification}, so "read" is not taken as a notification id.
+    Route::delete('/notifications/read', [NotificationController::class, 'destroyRead'])->name('notifications.destroy-read');
     Route::get('/notifications/{notification}', [NotificationController::class, 'open'])->name('notifications.open');
+    Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
+    Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
 
     // My profile (self-service): phone and address only (EmployeePolicy::updateContact, checked in the controller)
     // "active" is the CheckEmployeeStatus middleware: a suspended account cannot open these pages.

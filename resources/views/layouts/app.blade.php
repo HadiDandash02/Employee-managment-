@@ -171,6 +171,9 @@
         .notification-unread { background: var(--brand-light); }
         .notification-dot { width: .5rem; height: .5rem; border-radius: 50%; background: var(--brand); margin-top: .4rem; }
         .notification-message { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .notification-actions .btn-icon { width: 1.9rem; height: 1.9rem; font-size: .85rem; color: #4b5563; }
+        .notification-actions .btn-icon:hover { color: var(--brand); }
+        .notification-actions .notification-delete:hover { color: #c62839; border-color: #efb8bf; background: #fff1f3; }
         .min-w-0 { min-width: 0; }
 
         /* Top bar + content */

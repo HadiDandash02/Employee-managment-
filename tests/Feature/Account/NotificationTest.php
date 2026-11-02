@@ -136,4 +136,60 @@ class NotificationTest extends TestCase
 
         $this->assertSame(0, $user->unreadNotifications()->count());
     }
+
+    public function test_mark_one_as_read_and_delete_one(): void
+    {
+        $user = User::factory()->hr()->create();
+        LeaveRequest::factory()->count(2)->create()->each(fn ($leave) => $user->notify(new \App\Notifications\LeaveRequestSubmitted($leave)));
+        [$first, $second] = $user->notifications()->get()->all();
+        $this->actingAs($user);
+
+        $this->get(route('notifications.index'))->assertSee('Mark as read')->assertSee('Delete notification');
+
+        // Mark one as read: only that one, without opening it.
+        $this->from(route('notifications.index'))
+            ->patch(route('notifications.read', $first->id))
+            ->assertRedirect(route('notifications.index'))
+            ->assertSessionHas('success', 'Notification marked as read.');
+        $this->assertNotNull($first->fresh()->read_at);
+        $this->assertNull($second->fresh()->read_at);
+
+        // Delete one.
+        $this->from(route('notifications.index'))
+            ->delete(route('notifications.destroy', $second->id))
+            ->assertSessionHas('success', 'Notification deleted.');
+        $this->assertModelMissing($second);
+        $this->assertModelExists($first);
+    }
+
+    public function test_delete_read_keeps_the_unread_ones(): void
+    {
+        $user = User::factory()->hr()->create();
+        LeaveRequest::factory()->count(3)->create()->each(fn ($leave) => $user->notify(new \App\Notifications\LeaveRequestSubmitted($leave)));
+        $user->notifications()->limit(2)->get()->markAsRead();
+        $this->actingAs($user);
+
+        $this->get(route('notifications.index'))->assertSee('Delete read');
+        $this->from(route('notifications.index'))
+            ->delete(route('notifications.destroy-read'))
+            ->assertSessionHas('success', '2 read notifications deleted.');
+
+        $this->assertSame(1, $user->notifications()->count());
+        $this->assertSame(1, $user->unreadNotifications()->count());
+    }
+
+    public function test_nobody_can_mark_or_delete_someone_elses_notification(): void
+    {
+        $owner = User::factory()->hr()->create();
+        $owner->notify(new \App\Notifications\LeaveRequestSubmitted(LeaveRequest::factory()->create()));
+        $notification = $owner->notifications()->sole();
+        $this->actingAs(User::factory()->hr()->create());
+
+        $this->patch(route('notifications.read', $notification->id))->assertNotFound();
+        $this->delete(route('notifications.destroy', $notification->id))->assertNotFound();
+        $this->delete(route('notifications.destroy-read'));
+
+        $this->assertModelExists($notification);
+        $this->assertNull($notification->fresh()->read_at);
+    }
 }

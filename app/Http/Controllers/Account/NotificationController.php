@@ -42,4 +42,34 @@ class NotificationController extends Controller
 
         return back()->with('success', 'All notifications marked as read.');
     }
+
+    /**
+     * Mark one notification as read without opening it.
+     */
+    public function markRead(Request $request, string $notification)
+    {
+        $request->user()->notifications()->findOrFail($notification)->markAsRead();
+
+        return back()->with('success', 'Notification marked as read.');
+    }
+
+    /**
+     * Delete one notification. Only the user's own: someone else's id is a 404.
+     */
+    public function destroy(Request $request, string $notification)
+    {
+        $request->user()->notifications()->findOrFail($notification)->delete();
+
+        return back()->with('success', 'Notification deleted.');
+    }
+
+    /**
+     * Clean up: delete every notification that was already read (unread ones are kept).
+     */
+    public function destroyRead(Request $request)
+    {
+        $count = $request->user()->readNotifications()->delete();
+
+        return back()->with('success', $count.' read '.str('notification')->plural($count).' deleted.');
+    }
 }
