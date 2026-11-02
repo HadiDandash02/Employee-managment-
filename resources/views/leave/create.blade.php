@@ -47,9 +47,7 @@
             <h1 class="h4 fw-bold mb-0">Request leave</h1>
             <div class="text-muted small">A full day, half a day or several days. Your manager or HR will approve it.</div>
         </div>
-        <a href="{{ route('leave-requests.index') }}" class="btn btn-soft">
-            <i class="bi bi-arrow-left me-1"></i> My requests
-        </a>
+        <x-button variant="secondary" icon="bi-arrow-left" href="{{ route('leave-requests.index') }}">My requests</x-button>
     </div>
 
     @error('business')
@@ -95,7 +93,7 @@
                                         @foreach (App\Enums\LeavePeriod::cases() as $period)
                                             <input type="radio" class="btn-check" name="start_period" id="start_{{ $period->value }}" value="{{ $period->value }}"
                                                    @checked(old('start_period', 'morning') === $period->value)>
-                                            <label class="btn btn-outline-secondary" for="start_{{ $period->value }}">
+                                            <label class="btn btn-soft" for="start_{{ $period->value }}">
                                                 <i class="bi {{ $period === App\Enums\LeavePeriod::Morning ? 'bi-sunrise' : 'bi-sun' }} me-1"></i>{{ $period->label() }}
                                             </label>
                                         @endforeach
@@ -116,7 +114,7 @@
                                         @foreach (App\Enums\LeavePeriod::cases() as $period)
                                             <input type="radio" class="btn-check" name="end_period" id="end_{{ $period->value }}" value="{{ $period->value }}"
                                                    @checked(old('end_period', 'afternoon') === $period->value)>
-                                            <label class="btn btn-outline-secondary" for="end_{{ $period->value }}">
+                                            <label class="btn btn-soft" for="end_{{ $period->value }}">
                                                 <i class="bi {{ $period === App\Enums\LeavePeriod::Morning ? 'bi-sunrise' : 'bi-sun' }} me-1"></i>{{ $period->label() }}
                                             </label>
                                         @endforeach
@@ -143,10 +141,8 @@
                     <div class="panel-body border-top d-flex flex-wrap justify-content-between align-items-center gap-2 px-4">
                         <div class="small text-muted"><i class="bi bi-bell me-1"></i> You will get a notification when it is approved or rejected.</div>
                         <div class="d-flex gap-2 align-items-stretch">
-                            <a href="{{ route('leave-requests.index') }}" class="btn btn-soft d-inline-flex align-items-center px-3">Cancel</a>
-                            <button type="submit" class="btn btn-generate px-4" id="submit-button">
-                                <i class="bi bi-send me-1"></i> Send request
-                            </button>
+                            <x-button variant="secondary" class="px-3" href="{{ route('leave-requests.index') }}">Cancel</x-button>
+                            <x-button icon="bi-send" class="px-4" type="submit" id="submit-button">Send request</x-button>
                         </div>
                     </div>
                 </div>

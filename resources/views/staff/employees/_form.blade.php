@@ -158,13 +158,9 @@
     </div>
 
     <div class="card-footer bg-white d-flex flex-wrap align-items-center gap-2 p-3">
-        <button type="submit" class="btn btn-primary" id="submit-btn">
-            <span class="spinner-border spinner-border-sm me-1 d-none" aria-hidden="true"></span>
-            <i class="bi bi-check-lg me-1"></i> {{ $submitLabel }}
-        </button>
-        <a href="{{ $cancelUrl ?? route('employees.index') }}" class="btn btn-outline-secondary">
-            <i class="bi bi-x-lg me-1"></i> Cancel
-        </a>
+        <x-button type="submit" id="submit-btn"><span class="spinner-border spinner-border-sm me-1 d-none" aria-hidden="true"></span>
+            <i class="bi bi-check-lg me-1"></i> {{ $submitLabel }}</x-button>
+        <x-button variant="secondary" icon="bi-x-lg" href="{{ $cancelUrl ?? route('employees.index') }}">Cancel</x-button>
         <span class="badge text-bg-warning ms-auto d-none" id="unsaved-badge">
             <i class="bi bi-pencil me-1"></i> Unsaved changes
         </span>

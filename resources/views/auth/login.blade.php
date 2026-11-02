@@ -108,10 +108,8 @@
                         <label class="form-check-label small" for="remember">Remember me</label>
                     </div>
 
-                    <button type="submit" class="btn btn-generate w-100 py-2" id="login-btn">
-                        <span class="spinner-border spinner-border-sm me-1 d-none" aria-hidden="true"></span>
-                        Log in
-                    </button>
+                    <x-button class="w-100 py-2" type="submit" id="login-btn"><span class="spinner-border spinner-border-sm me-1 d-none" aria-hidden="true"></span>
+                        Log in</x-button>
                 </form>
             </div>
         </main>

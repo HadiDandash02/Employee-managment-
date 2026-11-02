@@ -13,9 +13,7 @@
             <div class="text-muted small">Filter, search, export and manage your employees.</div>
         </div>
         @can('employees.create')
-            <a href="{{ route('employees.create') }}" class="btn btn-generate">
-                <i class="bi bi-person-plus me-1"></i> Add Employee
-            </a>
+            <x-button icon="bi-person-plus" href="{{ route('employees.create') }}">Add Employee</x-button>
         @endcan
     </div>
 
@@ -80,8 +78,8 @@
                 </div>
 
                 <div class="d-flex justify-content-end gap-2 mt-4">
-                    <button type="submit" class="btn btn-generate">Generate Report</button>
-                    <button type="button" id="filter-clear" class="btn btn-clear">Clear</button>
+                    <x-button type="submit">Generate Report</x-button>
+                    <x-button variant="secondary" id="filter-clear">Clear</x-button>
                 </div>
             </div>
         </form>
@@ -102,32 +100,20 @@
                     </label>
                 </div>
                 {{-- Shown only in the Trash view: permanently deletes every trashed employee (all pages) --}}
-                <button type="button" id="empty-trash" class="btn btn-sm btn-clear d-none">
-                    <i class="bi bi-trash3-fill me-1"></i> Empty trash
-                </button>
+                <x-button variant="danger-outline" size="sm" icon="bi-trash3-fill" class="d-none" id="empty-trash">Empty trash</x-button>
             @endcan
-            <button type="button" class="btn btn-soft d-inline-flex align-items-center gap-2" id="filters-toggle"
-                    data-bs-toggle="collapse" data-bs-target="#filters-panel" aria-expanded="true" aria-controls="filters-panel">
-                <i class="bi bi-funnel"></i>
-                <span id="filters-toggle-text">Collapse</span>
-                <span id="filter-count" class="badge rounded-pill text-bg-primary filter-count d-none">0</span>
-            </button>
+            <x-button variant="secondary" icon="bi-funnel" id="filters-toggle" data-bs-toggle="collapse" data-bs-target="#filters-panel" aria-expanded="true" aria-controls="filters-panel"><span id="filters-toggle-text">Collapse</span>
+                <span id="filter-count" class="badge rounded-pill text-bg-primary filter-count d-none">0</span></x-button>
         </div>
 
         <div id="bulk-bar" class="d-none align-items-center gap-3 px-3 py-2 border-bottom" style="background: var(--brand-light)">
             <i class="bi bi-check2-square text-primary"></i>
             <span class="small"><strong id="selected-count">0</strong> selected</span>
             {{-- Active view --}}
-            <button type="button" id="bulk-delete" class="btn btn-sm btn-danger" data-status="active">
-                <i class="bi bi-trash me-1"></i> Delete selected
-            </button>
+            <x-button variant="danger" size="sm" icon="bi-trash" id="bulk-delete" data-status="active">Delete selected</x-button>
             {{-- Trash view --}}
-            <button type="button" id="bulk-restore" class="btn btn-sm btn-success d-none" data-status="trash">
-                <i class="bi bi-arrow-counterclockwise me-1"></i> Restore selected
-            </button>
-            <button type="button" id="bulk-force" class="btn btn-sm btn-danger d-none" data-status="trash">
-                <i class="bi bi-x-octagon me-1"></i> Delete forever
-            </button>
+            <x-button variant="success" size="sm" icon="bi-arrow-counterclockwise" class="d-none" id="bulk-restore" data-status="trash">Restore selected</x-button>
+            <x-button variant="danger" size="sm" icon="bi-x-octagon" class="d-none" id="bulk-force" data-status="trash">Delete forever</x-button>
             <button type="button" id="bulk-clear" class="btn btn-sm btn-link text-decoration-none">Clear selection</button>
         </div>
 

@@ -22,9 +22,7 @@
             <h1 class="h4 fw-bold mb-0">Manage Departments</h1>
             <div class="text-muted small">Departments, their codes and branches.</div>
         </div>
-        <a href="{{ route('admin.departments.create') }}" class="btn btn-generate">
-            <i class="bi bi-plus-lg me-1"></i> Add Department
-        </a>
+        <x-button icon="bi-plus-lg" href="{{ route('admin.departments.create') }}">Add Department</x-button>
     </div>
 
     @if ($errors->any())
@@ -37,9 +35,9 @@
             <form method="GET" action="{{ route('admin.departments.index') }}" class="d-flex gap-2" role="search">
                 <input type="text" name="search" value="{{ $search }}" class="form-control form-control-sm"
                        placeholder="Search name or code" aria-label="Search departments" style="min-width: 14rem">
-                <button type="submit" class="btn btn-sm btn-soft"><i class="bi bi-search"></i></button>
+                <x-button variant="secondary" size="sm" icon="bi-search" type="submit"></x-button>
                 @if ($search !== '')
-                    <a href="{{ route('admin.departments.index') }}" class="btn btn-sm btn-clear">Clear</a>
+                    <x-button variant="secondary" size="sm" href="{{ route('admin.departments.index') }}">Clear</x-button>
                 @endif
             </form>
         </div>

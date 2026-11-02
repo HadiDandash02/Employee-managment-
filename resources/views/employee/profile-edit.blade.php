@@ -37,10 +37,8 @@
             </div>
         </div>
         <div class="panel-body border-top d-flex justify-content-end gap-2">
-            <a href="{{ route('profile.show') }}" class="btn btn-soft">Cancel</a>
-            <button type="submit" class="btn btn-generate">
-                <i class="bi bi-check2 me-1"></i> Save
-            </button>
+            <x-button variant="secondary" href="{{ route('profile.show') }}">Cancel</x-button>
+            <x-button icon="bi-check2" type="submit">Save</x-button>
         </div>
     </form>
 @endsection

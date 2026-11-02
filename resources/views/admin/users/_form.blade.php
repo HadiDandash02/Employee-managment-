@@ -104,8 +104,8 @@
     </div>
 
     <div class="panel-body border-top d-flex gap-2 justify-content-end">
-        <a href="{{ route('admin.users.index') }}" class="btn btn-clear">Cancel</a>
-        <button type="submit" class="btn btn-generate">{{ $submitLabel }}</button>
+        <x-button variant="secondary" href="{{ route('admin.users.index') }}">Cancel</x-button>
+        <x-button type="submit">{{ $submitLabel }}</x-button>
     </div>
 </div>
 

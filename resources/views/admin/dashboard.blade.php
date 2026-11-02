@@ -8,9 +8,7 @@
             <h1 class="h4 fw-bold mb-0">{{ auth()->user()->panel_label }} Dashboard</h1>
             <div class="text-muted small">Overview, users and permissions.</div>
         </div>
-        <a href="{{ route('admin.users.create') }}" class="btn btn-generate">
-            <i class="bi bi-person-plus me-1"></i> Add User
-        </a>
+        <x-button icon="bi-person-plus" href="{{ route('admin.users.create') }}">Add User</x-button>
     </div>
 
     @if ($errors->any())

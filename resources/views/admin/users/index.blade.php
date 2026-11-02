@@ -15,9 +15,7 @@
             <h1 class="h4 fw-bold mb-0">Manage Users</h1>
             <div class="text-muted small">Filter, edit and remove user accounts.</div>
         </div>
-        <a href="{{ route('admin.users.create') }}" class="btn btn-generate">
-            <i class="bi bi-person-plus me-1"></i> Add User
-        </a>
+        <x-button icon="bi-person-plus" href="{{ route('admin.users.create') }}">Add User</x-button>
     </div>
 
     {{-- Filter panel --}}
@@ -44,8 +42,8 @@
                 </div>
 
                 <div class="d-flex justify-content-end gap-2 mt-4">
-                    <button type="submit" class="btn btn-generate">Generate Report</button>
-                    <button type="button" id="filter-clear" class="btn btn-clear">Clear</button>
+                    <x-button type="submit">Generate Report</x-button>
+                    <x-button variant="secondary" id="filter-clear">Clear</x-button>
                 </div>
             </div>
         </form>
@@ -55,12 +53,8 @@
     <div class="panel table-panel">
         <div class="panel-header">
             <h2 class="panel-title">Users</h2>
-            <button type="button" class="btn btn-soft d-inline-flex align-items-center gap-2"
-                    data-bs-toggle="collapse" data-bs-target="#filters-panel" aria-expanded="true" aria-controls="filters-panel">
-                <i class="bi bi-funnel"></i>
-                <span id="filters-toggle-text">Collapse</span>
-                <span id="filter-count" class="badge rounded-pill text-bg-primary filter-count d-none">0</span>
-            </button>
+            <x-button variant="secondary" icon="bi-funnel" data-bs-toggle="collapse" data-bs-target="#filters-panel" aria-expanded="true" aria-controls="filters-panel"><span id="filters-toggle-text">Collapse</span>
+                <span id="filter-count" class="badge rounded-pill text-bg-primary filter-count d-none">0</span></x-button>
         </div>
 
         <table id="users-table" class="table app-table w-100">

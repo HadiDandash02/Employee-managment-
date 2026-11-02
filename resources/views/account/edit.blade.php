@@ -64,9 +64,7 @@
                     </p>
                 </div>
                 <div class="panel-body border-top d-flex justify-content-end">
-                    <button type="submit" class="btn btn-generate">
-                        <i class="bi bi-key me-1"></i> Change password
-                    </button>
+                    <x-button icon="bi-key" type="submit">Change password</x-button>
                 </div>
             </form>
         </div>

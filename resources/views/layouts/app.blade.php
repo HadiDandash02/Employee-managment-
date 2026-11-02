@@ -31,11 +31,52 @@
             --bs-border-radius: .5rem;
         }
         body { background: #f3f6f6; }
+        /* ---- Buttons: one standard for the whole system (use the x-button component: resources/views/components/button.blade.php) ----
+           primary = the main action · secondary = Cancel/Back/View/Clear · success · warning · danger · danger-outline */
+        .btn {
+            --bs-btn-font-weight: 600; --bs-btn-font-size: .82rem; --bs-btn-line-height: 1.25;
+            --bs-btn-padding-x: 1rem; --bs-btn-padding-y: .5rem; --bs-btn-border-radius: .5rem;
+            --bs-btn-focus-box-shadow: 0 0 0 .2rem rgba(15, 123, 108, .25);
+            --bs-btn-disabled-opacity: .55;
+            white-space: nowrap; /* icon and text always on one line */
+            transition: background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease;
+        }
+        .btn-sm { --bs-btn-font-size: .76rem; --bs-btn-padding-x: .7rem; --bs-btn-padding-y: .32rem; --bs-btn-border-radius: .42rem; }
+        .btn-primary, .btn-success, .btn-warning, .btn-danger { box-shadow: 0 1px 2px rgba(16, 24, 40, .1); }
         .btn-primary {
-            --bs-btn-bg: var(--brand); --bs-btn-border-color: var(--brand);
-            --bs-btn-hover-bg: var(--brand-dark); --bs-btn-hover-border-color: var(--brand-dark);
-            --bs-btn-active-bg: var(--brand-dark); --bs-btn-active-border-color: var(--brand-dark);
-            --bs-btn-disabled-bg: var(--brand); --bs-btn-disabled-border-color: var(--brand);
+            --bs-btn-color: #fff; --bs-btn-bg: var(--brand); --bs-btn-border-color: var(--brand);
+            --bs-btn-hover-color: #fff; --bs-btn-hover-bg: var(--brand-dark); --bs-btn-hover-border-color: var(--brand-dark);
+            --bs-btn-active-color: #fff; --bs-btn-active-bg: #09524a; --bs-btn-active-border-color: #09524a;
+            --bs-btn-disabled-color: #fff; --bs-btn-disabled-bg: var(--brand); --bs-btn-disabled-border-color: var(--brand);
+        }
+        .btn-soft {
+            --bs-btn-color: #1f2937; --bs-btn-bg: #fff; --bs-btn-border-color: #d9e0e0;
+            --bs-btn-hover-color: #111827; --bs-btn-hover-bg: #f3f6f6; --bs-btn-hover-border-color: #c5cfcf;
+            --bs-btn-active-color: var(--brand-dark); --bs-btn-active-bg: var(--brand-light); --bs-btn-active-border-color: #a9dbd1;
+            --bs-btn-disabled-color: #6b7280; --bs-btn-disabled-bg: #fff; --bs-btn-disabled-border-color: #e5e7eb;
+        }
+        .btn-success {
+            --bs-btn-color: #fff; --bs-btn-bg: #15803d; --bs-btn-border-color: #15803d;
+            --bs-btn-hover-color: #fff; --bs-btn-hover-bg: #166534; --bs-btn-hover-border-color: #166534;
+            --bs-btn-active-color: #fff; --bs-btn-active-bg: #14532d; --bs-btn-active-border-color: #14532d;
+            --bs-btn-disabled-color: #fff; --bs-btn-disabled-bg: #15803d; --bs-btn-disabled-border-color: #15803d;
+        }
+        .btn-warning {
+            --bs-btn-color: #422006; --bs-btn-bg: #fbbf24; --bs-btn-border-color: #f5b014;
+            --bs-btn-hover-color: #422006; --bs-btn-hover-bg: #f59e0b; --bs-btn-hover-border-color: #e8930a;
+            --bs-btn-active-color: #422006; --bs-btn-active-bg: #d97706; --bs-btn-active-border-color: #d97706;
+            --bs-btn-disabled-color: #422006; --bs-btn-disabled-bg: #fbbf24; --bs-btn-disabled-border-color: #fbbf24;
+        }
+        .btn-danger {
+            --bs-btn-color: #fff; --bs-btn-bg: #c62839; --bs-btn-border-color: #c62839;
+            --bs-btn-hover-color: #fff; --bs-btn-hover-bg: #a91f2f; --bs-btn-hover-border-color: #a91f2f;
+            --bs-btn-active-color: #fff; --bs-btn-active-bg: #8e1a28; --bs-btn-active-border-color: #8e1a28;
+            --bs-btn-disabled-color: #fff; --bs-btn-disabled-bg: #c62839; --bs-btn-disabled-border-color: #c62839;
+        }
+        .btn-outline-danger {
+            --bs-btn-color: #c62839; --bs-btn-bg: #fff; --bs-btn-border-color: #efb8bf;
+            --bs-btn-hover-color: #fff; --bs-btn-hover-bg: #c62839; --bs-btn-hover-border-color: #c62839;
+            --bs-btn-active-color: #fff; --bs-btn-active-bg: #a91f2f; --bs-btn-active-border-color: #a91f2f;
         }
         .btn-outline-primary {
             --bs-btn-color: var(--brand); --bs-btn-border-color: var(--brand);
@@ -177,15 +218,6 @@
             background-position: right 12px center, right 36px center;
             padding-right: 3.2rem;
         }
-        .btn-generate {
-            background: linear-gradient(180deg, #13907f, #0d6e61); color: #fff; border: 0; font-weight: 600;
-            padding: .55rem 1.1rem; border-radius: .55rem; box-shadow: 0 2px 6px rgba(15, 123, 108, .35);
-        }
-        .btn-generate:hover, .btn-generate:focus { background: linear-gradient(180deg, #11806f, #0a5c51); color: #fff; }
-        .btn-clear { background: #fff1f3; color: #c0264b; border: 1px solid #f6c6d1; font-weight: 600; padding: .5rem 1rem; border-radius: .55rem; }
-        .btn-clear:hover, .btn-clear:focus { background: #ffe3e9; color: #a51d3e; border-color: #f0a9ba; }
-        .btn-soft { background: #fff; border: 1px solid #dfe5e5; color: #111; font-weight: 600; font-size: .78rem; border-radius: .45rem; }
-        .btn-soft:hover, .btn-soft:focus, .btn-soft.show { background: #f3f6f6; border-color: #cfd8d8; color: #111; }
 
         .btn-icon { width: 2rem; height: 2rem; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
         /* Eye button after a password field: <button data-password-toggle="field-id"> */

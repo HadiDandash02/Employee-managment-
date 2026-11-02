@@ -30,13 +30,9 @@
                     </div>
                 </div>
                 @can('updateContact', $employee)
-                    <a href="{{ route('profile.edit') }}" class="btn btn-soft">
-                        <i class="bi bi-pencil-square me-1"></i> Edit contact info
-                    </a>
+                    <x-button variant="secondary" icon="bi-pencil-square" href="{{ route('profile.edit') }}">Edit contact info</x-button>
                 @endcan
-                <a href="{{ route('account.edit') }}#change-password" class="btn btn-soft">
-                    <i class="bi bi-key me-1"></i> Change password
-                </a>
+                <x-button variant="secondary" icon="bi-key" href="{{ route('account.edit') }}#change-password">Change password</x-button>
             </div>
         </div>
 

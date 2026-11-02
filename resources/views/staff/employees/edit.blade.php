@@ -47,9 +47,7 @@
                     </li>
                 </ul>
                 <div class="card-body pt-2">
-                    <a href="{{ route('employees.show', $employee) }}" class="btn btn-sm btn-outline-secondary w-100">
-                        <i class="bi bi-eye me-1"></i> View profile
-                    </a>
+                    <x-button variant="secondary" size="sm" icon="bi-eye" class="w-100" href="{{ route('employees.show', $employee) }}">View profile</x-button>
                 </div>
             </div>
 
@@ -64,9 +62,7 @@
                               onsubmit="return confirm('Move {{ addslashes($employee->full_name) }} to the trash? You can restore them later.')">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="btn btn-outline-danger w-100">
-                                <i class="bi bi-trash me-1"></i> Move to trash
-                            </button>
+                            <x-button variant="danger-outline" icon="bi-trash" class="w-100" type="submit">Move to trash</x-button>
                         </form>
                     </div>
                 </div>

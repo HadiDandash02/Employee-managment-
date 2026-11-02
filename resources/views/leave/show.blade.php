@@ -79,13 +79,8 @@
                         @error('comment') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
                     <div class="panel-body border-top d-flex justify-content-end gap-2">
-                        <button type="submit" formaction="{{ route('leave-requests.reject', $leaveRequest) }}" class="btn btn-outline-danger"
-                                onclick="return confirm('Reject this leave request?')">
-                            <i class="bi bi-x-circle me-1"></i> Reject
-                        </button>
-                        <button type="submit" class="btn btn-success" onclick="return confirm('Approve this leave request?')">
-                            <i class="bi bi-check-circle me-1"></i> Approve
-                        </button>
+                        <x-button variant="danger-outline" icon="bi-x-circle" type="submit" formaction="{{ route('leave-requests.reject', $leaveRequest) }}" onclick="return confirm('Reject this leave request?')">Reject</x-button>
+                        <x-button variant="success" icon="bi-check-circle" type="submit" onclick="return confirm('Approve this leave request?')">Approve</x-button>
                     </div>
                 </form>
             @elseif ($leaveRequest->isPending() && $leaveRequest->isOwnedBy(auth()->user()))
@@ -99,9 +94,7 @@
                             <form method="POST" action="{{ route('leave-requests.cancel', $leaveRequest) }}"
                                   onsubmit="return confirm('Cancel this leave request? The days become available again.')">
                                 @csrf
-                                <button type="submit" class="btn btn-outline-secondary">
-                                    <i class="bi bi-slash-circle me-1"></i> Cancel request
-                                </button>
+                                <x-button variant="secondary" icon="bi-slash-circle" type="submit">Cancel request</x-button>
                             </form>
                         @endcan
                     </div>

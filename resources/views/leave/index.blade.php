@@ -30,9 +30,7 @@
             </div>
         </div>
         @can('create', App\Models\LeaveRequest::class)
-            <a href="{{ route('leave-requests.create') }}" class="btn btn-generate">
-                <i class="bi bi-calendar-plus me-1"></i> Request leave
-            </a>
+            <x-button icon="bi-calendar-plus" href="{{ route('leave-requests.create') }}">Request leave</x-button>
         @endcan
     </div>
 
@@ -66,9 +64,9 @@
                 @endif
                 <input type="search" name="search" value="{{ $search }}" class="form-control form-control-sm"
                        placeholder="{{ $reviewer ? 'Search employee or reason' : 'Search reason' }}" aria-label="Search leave requests" style="min-width: 14rem">
-                <button type="submit" class="btn btn-sm btn-soft" aria-label="Search"><i class="bi bi-search"></i></button>
+                <x-button variant="secondary" size="sm" icon="bi-search" type="submit" aria-label="Search"></x-button>
                 @if ($search !== '')
-                    <a href="{{ route('leave-requests.index', array_filter(['status' => $status?->value])) }}" class="btn btn-sm btn-clear">Clear</a>
+                    <x-button variant="secondary" size="sm" href="{{ route('leave-requests.index', array_filter(['status' => $status?->value])) }}">Clear</x-button>
                 @endif
             </form>
         </div>
@@ -124,13 +122,11 @@
                                 @endif
                             </td>
                             <td class="text-end">
-                                <a href="{{ route('leave-requests.show', $leaveRequest) }}" class="btn btn-sm btn-soft">
-                                    @if ($leaveRequest->isPending() && ! $leaveRequest->isOwnedBy(auth()->user()) && auth()->user()->can('approve', $leaveRequest))
-                                        <i class="bi bi-check2-square me-1"></i> Review
-                                    @else
-                                        <i class="bi bi-eye me-1"></i> View
-                                    @endif
-                                </a>
+                                @if ($leaveRequest->isPending() && ! $leaveRequest->isOwnedBy(auth()->user()) && auth()->user()->can('approve', $leaveRequest))
+                                    <x-button variant="warning" size="sm" icon="bi-check2-square" href="{{ route('leave-requests.show', $leaveRequest) }}">Review</x-button>
+                                @else
+                                    <x-button variant="success" size="sm" icon="bi-eye" href="{{ route('leave-requests.show', $leaveRequest) }}">View</x-button>
+                                @endif
                             </td>
                         </tr>
                     @empty

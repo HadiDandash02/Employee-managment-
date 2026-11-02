@@ -11,7 +11,7 @@
         @if (auth()->user()->unreadNotifications()->exists())
             <form method="POST" action="{{ route('notifications.read-all') }}">
                 @csrf
-                <button type="submit" class="btn btn-soft"><i class="bi bi-check2-all me-1"></i> Mark all as read</button>
+                <x-button variant="secondary" icon="bi-check2-all" type="submit">Mark all as read</x-button>
             </form>
         @endif
     </div>

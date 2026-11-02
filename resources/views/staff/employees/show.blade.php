@@ -31,23 +31,17 @@
             </div>
             <div class="d-flex flex-wrap gap-2">
                 @can('update', $employee)
-                    <a href="{{ route('employees.edit', $employee) }}" class="btn btn-primary">
-                        <i class="bi bi-pencil-square me-1"></i> Edit
-                    </a>
+                    <x-button icon="bi-pencil-square" href="{{ route('employees.edit', $employee) }}">Edit</x-button>
                 @endcan
                 @can('delete', $employee)
                     <form action="{{ route('employees.destroy', $employee) }}" method="POST"
                           onsubmit="return confirm('Move {{ addslashes($employee->full_name) }} to the trash? You can restore them later.')">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="btn btn-outline-danger">
-                            <i class="bi bi-trash me-1"></i> Delete
-                        </button>
+                        <x-button variant="danger-outline" icon="bi-trash" type="submit">Delete</x-button>
                     </form>
                 @endcan
-                <a href="{{ route('employees.index') }}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left me-1"></i> Back
-                </a>
+                <x-button variant="secondary" icon="bi-arrow-left" href="{{ route('employees.index') }}">Back</x-button>
             </div>
         </div>
     </div>
