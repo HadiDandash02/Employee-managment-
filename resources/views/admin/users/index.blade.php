@@ -155,12 +155,8 @@
             },
             {
                 data: null, orderable: false, searchable: false,
-                // Passwords are stored hashed and can never be shown; offer a reset instead.
-                render: (data, type, row) => `
-                    <span class="password-mask me-2" aria-label="Hidden password">••••••••</span>
-                    <a href="${row.urls.password}" class="btn btn-sm btn-soft py-0 px-2" data-bs-toggle="tooltip" title="Set a new password">
-                        <i class="bi bi-key me-1"></i>Reset
-                    </a>`,
+                // Passwords are stored hashed and can never be shown; "Reset password" is in the ⋮ actions menu.
+                render: () => '<span class="password-mask" aria-label="Hidden password">••••••••</span>',
             },
             {
                 data: null, orderable: false, searchable: false, className: 'text-end col-actions',
