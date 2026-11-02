@@ -11,13 +11,16 @@
         </ol>
     </nav>
 
-    <h1 class="h4 fw-bold mb-3">Add user</h1>
-
-    <div class="row">
-        <div class="col-lg-9 col-xl-8">
-            <form method="POST" action="{{ route('admin.users.store') }}">
-                @include('admin.users._form', ['submitLabel' => 'Create user'])
-            </form>
+    <div class="d-flex flex-wrap align-items-center gap-3 mb-4">
+        <span class="avatar text-bg-primary" style="width: 56px; height: 56px; font-size: 1.4rem" aria-hidden="true"><i class="bi bi-person-plus"></i></span>
+        <div class="me-auto">
+            <h1 class="h4 fw-bold mb-1">Add user</h1>
+            <div class="small text-muted">Create a login. Fields marked <span class="text-danger">*</span> are required.</div>
         </div>
+        <x-button variant="secondary" icon="bi-arrow-left" href="{{ route('admin.users.index') }}">Back to users</x-button>
     </div>
+
+    <form method="POST" action="{{ route('admin.users.store') }}">
+        @include('admin.users._form', ['submitLabel' => 'Create user'])
+    </form>
 @endsection
