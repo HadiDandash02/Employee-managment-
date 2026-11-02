@@ -311,7 +311,8 @@
 
                 {{-- Notifications: the bell, with the number of unread ones and the 5 latest --}}
                 @php($unreadCount = $me->unreadNotifications()->count())
-                @php($latestNotifications = $me->notifications()->limit(5)->get())
+                {{-- The bell lists only UNREAD ones: once read (opened, ✓ or "Mark all as read") they leave the bell. All of them stay on the Notifications page. --}}
+                @php($latestNotifications = $me->unreadNotifications()->limit(5)->get())
                 <div class="dropdown">
                     <button type="button" class="btn btn-soft btn-icon position-relative" data-bs-toggle="dropdown" aria-expanded="false"
                             aria-label="Notifications{{ $unreadCount ? " ({$unreadCount} unread)" : '' }}">
@@ -334,9 +335,9 @@
                         </div>
                         <div class="list-group list-group-flush notification-list">
                             @forelse ($latestNotifications as $notification)
-                                @include('partials.notification-item')
+                                @include('partials.notification-item', ['actions' => 'read'])
                             @empty
-                                <div class="text-center text-muted small py-4"><i class="bi bi-bell-slash d-block fs-4 mb-1 opacity-50"></i>No notifications yet.</div>
+                                <div class="text-center text-muted small py-4"><i class="bi bi-check2-circle d-block fs-4 mb-1 opacity-50"></i>You're all caught up.</div>
                             @endforelse
                         </div>
                         <a href="{{ route('notifications.index') }}" class="d-block text-center small fw-semibold py-2 border-top text-decoration-none">View all notifications</a>

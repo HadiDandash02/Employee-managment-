@@ -1,5 +1,6 @@
 {{-- One notification: icon, title, message, time. Unread ones are highlighted. Needs $notification.
-     $actions = true (the Notifications page) adds the "Mark as read" and "Delete" buttons. --}}
+     $actions = true   (the Notifications page) adds the "Mark as read" and "Delete" buttons;
+     $actions = 'read' (the bell in the top bar) adds only "Mark as read". --}}
 @php($data = $notification->data)
 @php($actions = $actions ?? false)
 <div class="list-group-item list-group-item-action notification-row d-flex align-items-start gap-2 px-3 py-2 {{ $notification->read_at ? '' : 'notification-unread' }}">
@@ -25,13 +26,15 @@
                     </button>
                 </form>
             @endunless
-            <form method="POST" action="{{ route('notifications.destroy', $notification->id) }}" onsubmit="return confirm('Delete this notification?')">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="btn btn-soft btn-icon notification-delete" data-bs-toggle="tooltip" title="Delete" aria-label="Delete notification">
-                    <i class="bi bi-trash"></i>
-                </button>
-            </form>
+            @if ($actions !== 'read')
+                <form method="POST" action="{{ route('notifications.destroy', $notification->id) }}" onsubmit="return confirm('Delete this notification?')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-soft btn-icon notification-delete" data-bs-toggle="tooltip" title="Delete" aria-label="Delete notification">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </form>
+            @endif
         </div>
     @elseif (! $notification->read_at)
         <span class="notification-dot ms-auto flex-shrink-0" aria-label="Unread"></span>

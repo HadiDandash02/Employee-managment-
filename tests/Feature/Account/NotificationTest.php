@@ -162,6 +162,25 @@ class NotificationTest extends TestCase
         $this->assertModelExists($first);
     }
 
+    public function test_the_bell_lists_only_unread_notifications(): void
+    {
+        $user = User::factory()->hr()->create();
+        $user->notify(new \App\Notifications\LeaveRequestSubmitted(LeaveRequest::factory()->create()));
+        $notification = $user->notifications()->sole();
+        $this->actingAs($user);
+
+        // Unread: in the bell, with its own "Mark as read" button.
+        $bell = fn () => \Illuminate\Support\Str::between($this->get(route('account.edit'))->getContent(), 'notification-menu', 'View all notifications');
+        $this->assertStringContainsString(route('notifications.read', $notification->id), $bell());
+        $this->assertStringNotContainsString('Delete notification', $bell());
+
+        // Marked as read: gone from the bell, still on the Notifications page.
+        $this->patch(route('notifications.read', $notification->id));
+        $this->assertStringNotContainsString(route('notifications.open', $notification->id), $bell());
+        $this->assertStringContainsString('caught up', $bell());
+        $this->get(route('notifications.index'))->assertSee(route('notifications.open', $notification->id), false);
+    }
+
     public function test_delete_read_keeps_the_unread_ones(): void
     {
         $user = User::factory()->hr()->create();
