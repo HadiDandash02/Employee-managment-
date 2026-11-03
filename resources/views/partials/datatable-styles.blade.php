@@ -26,7 +26,7 @@
     table.app-table { margin: 0 !important; font-size: .82rem; }
     table.app-table thead th:first-child { border-top-left-radius: .5rem; }
     table.app-table thead th:last-child { border-top-right-radius: .5rem; }
-    table.app-table thead th.dt-orderable-asc:hover, table.app-table thead th.dt-orderable-desc:hover { outline: none; background-color: #eef2f7 !important; color: var(--ink) !important; }
+    table.app-table thead th.dt-orderable-asc:hover, table.app-table thead th.dt-orderable-desc:hover { outline: none; background-color: color-mix(in srgb, var(--table-head-bg) 85%, var(--brand) 15%) !important; color: var(--ink) !important; }
     table.app-table thead span.dt-column-order { color: #94a3b8; }
     table.app-table thead .form-check-input { cursor: pointer; }
     table.app-table tbody .form-check-input { cursor: pointer; }

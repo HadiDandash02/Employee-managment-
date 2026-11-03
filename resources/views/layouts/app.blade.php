@@ -37,6 +37,9 @@
             --surface: #ffffff;            /* cards */
             --canvas: #f5f7fb;             /* page background */
             --hover: #f8fafc;              /* row / item hover */
+            --table-head-bg: #eef2f7;      /* table header row: a calm slate tint, not white */
+            --table-head-color: #334155;   /* … with dark, easy-to-read titles */
+            --table-head-line: #d8dee9;
             --sidebar-bg: #ffffff;         /* light sidebar */
             --sidebar-text: #334155;
             --sidebar-muted: #94a3b8;
@@ -323,10 +326,10 @@
         /* Tables: light header, quiet separators, soft hover (DataTables, leave list, departments) */
         .table { --bs-table-hover-bg: var(--hover); --bs-table-border-color: var(--line-soft); }
         table.app-table thead th, .leave-table thead th, .departments-table thead th {
-            --bs-table-bg: #f8fafc; --bs-table-color: var(--ink-soft);
-            background-color: #f8fafc !important; color: var(--ink-soft) !important;
-            font-weight: 600; font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; white-space: nowrap;
-            border: 0; border-bottom: 1px solid var(--line); padding: .8rem .85rem; vertical-align: middle;
+            --bs-table-bg: var(--table-head-bg); --bs-table-color: var(--table-head-color);
+            background-color: var(--table-head-bg) !important; color: var(--table-head-color) !important;
+            font-weight: 700; font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; white-space: nowrap;
+            border: 0; border-bottom: 1px solid var(--table-head-line); padding: .8rem .85rem; vertical-align: middle;
         }
         .leave-table td, .departments-table td { padding: .85rem; vertical-align: middle; font-size: .85rem; border-bottom: 1px solid var(--line-soft); }
         .leave-table tbody tr:hover > td, .departments-table tbody tr:hover > td { background: var(--hover); }
@@ -411,9 +414,7 @@
                 url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23cbd5e1' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.2' d='m3 6 5 5 5-5'/%3e%3c/svg%3e"),
                 linear-gradient(#263244, #263244);
         }
-        [data-theme="dark"] table.app-table thead th, [data-theme="dark"] .leave-table thead th, [data-theme="dark"] .departments-table thead th {
-            --bs-table-bg: #0f172a; background-color: #0f172a !important; color: var(--muted) !important;
-        }
+        [data-theme="dark"] { --table-head-bg: #172033; --table-head-color: #cbd5e1; --table-head-line: #2b3a52; }
         [data-theme="dark"] table.app-table tbody td.col-actions { background-color: var(--surface); }
         [data-theme="dark"] .table { --bs-table-bg: transparent; --bs-table-color: var(--ink); }
         [data-theme="dark"] .notification-menu-header, [data-theme="dark"] .notification-menu-footer, [data-theme="dark"] .notification-group { background: #0f172a; }
@@ -432,7 +433,12 @@
         /* Bootstrap "subtle" badges (bg-primary-subtle …): my light values must not leak into dark mode */
         [data-theme="dark"] { --bs-primary-bg-subtle: rgba(99, 102, 241, .2); --bs-primary-border-subtle: rgba(129, 140, 248, .45); }
         [data-theme="dark"] .nav-pills { --bs-nav-link-color: var(--ink-soft); --bs-nav-link-hover-color: #c7d2fe; }
-        [data-theme="dark"] * { scrollbar-color: #334155 transparent; }
+        /* Scrollbars in dark mode: green, so they stand out on the dark background.
+           "[data-theme=dark]" itself = the <html> element, which owns the main page scrollbar. */
+        [data-theme="dark"], [data-theme="dark"] * { scrollbar-color: #22c55e #0f172a; }
+        [data-theme="dark"] ::-webkit-scrollbar-track { background: #0f172a; }
+        [data-theme="dark"] ::-webkit-scrollbar-thumb { background: #22c55e; border-radius: 999px; border: 2px solid #0f172a; }
+        [data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #4ade80; }
 
         /* The 🌙 / ☀️ button: the moon shows in light mode, the sun in dark mode */
         .theme-toggle .bi-sun { display: none; }
