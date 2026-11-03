@@ -15,9 +15,7 @@
                     <span class="avatar text-bg-primary mb-3" style="width: 72px; height: 72px; font-size: 26px">{{ $user->initials }}</span>
                     <div class="fw-bold fs-5">{{ $user->name }}</div>
                     <div class="text-muted small mb-2">{{ '@'.$user->username }}</div>
-                    <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis border border-primary-subtle">
-                        <i class="bi bi-shield-check me-1"></i>{{ $user->role_label }}
-                    </span>
+                    <x-role-badge :user="$user" />
                 </div>
                 <ul class="list-group list-group-flush small">
                     <li class="list-group-item d-flex justify-content-between px-3">

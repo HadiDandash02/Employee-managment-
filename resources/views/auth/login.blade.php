@@ -7,12 +7,12 @@
 
 @push('styles')
     <style>
-        /* Full-screen split: teal brand panel on the left, the form on the right */
+        /* Full-screen split: bright brand panel on the left, the form on the right */
         .login-page { min-height: 100vh; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); background: #fff; }
 
         .login-side {
             position: relative; overflow: hidden; color: #fff; padding: 3rem 3.5rem;
-            background: linear-gradient(155deg, #16a08d 0%, #0f7b6c 45%, #0a5249 100%);
+            background: radial-gradient(circle at 85% 10%, rgba(255, 255, 255, .22), transparent 40%), linear-gradient(150deg, #818cf8 0%, #6366f1 45%, #4f46e5 100%);
             display: flex; flex-direction: column; justify-content: space-between;
         }
         /* soft decorative circles */
@@ -22,7 +22,7 @@
         .login-side > * { position: relative; z-index: 1; }
         .login-side .brand { display: flex; align-items: center; gap: .75rem; font-weight: 700; font-size: 1.1rem; }
         .login-side .brand-mark { width: 48px; height: 48px; border-radius: 14px; background: rgba(255, 255, 255, .16); display: inline-flex; align-items: center; justify-content: center; font-size: 1.4rem; }
-        .login-side h1 { font-size: clamp(1.9rem, 3vw, 2.75rem); font-weight: 800; line-height: 1.15; letter-spacing: -.01em; }
+        .login-side h1 { color: #fff; font-size: clamp(1.9rem, 3vw, 2.75rem); font-weight: 800; line-height: 1.15; letter-spacing: -.01em; }
         .login-side .lead-text { max-width: 30rem; opacity: .85; font-size: 1.05rem; }
         .login-feature { display: flex; gap: .85rem; align-items: flex-start; margin-bottom: 1.1rem; max-width: 30rem; }
         .login-feature .icon { width: 38px; height: 38px; border-radius: 10px; background: rgba(255, 255, 255, .14); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }

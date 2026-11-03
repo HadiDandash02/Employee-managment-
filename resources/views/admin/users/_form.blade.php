@@ -160,7 +160,7 @@
             <div class="panel-body">
                 @if ($user->exists)
                     <dl class="summary-list mb-0">
-                        <div><dt>Role</dt><dd><span class="badge rounded-pill bg-{{ $user->role_color }}-subtle text-{{ $user->role_color }}-emphasis border border-{{ $user->role_color }}-subtle">{{ $user->role_label }}</span></dd></div>
+                        <div><dt>Role</dt><dd><x-role-badge :user="$user" /></dd></div>
                         <div><dt>Status</dt><dd>
                             @if ($user->is_active)
                                 <span class="badge rounded-pill bg-success-subtle text-success-emphasis border border-success-subtle"><i class="bi bi-check-circle me-1"></i>Active</span>

@@ -211,4 +211,84 @@ class NotificationTest extends TestCase
         $this->assertModelExists($notification);
         $this->assertNull($notification->fresh()->read_at);
     }
+
+    private function userWithNotifications(int $count): User
+    {
+        $user = User::factory()->hr()->create();
+        LeaveRequest::factory()->count($count)->create()->each(fn ($leave) => $user->notify(new \App\Notifications\LeaveRequestSubmitted($leave)));
+
+        return $user;
+    }
+
+    public function test_ajax_actions_answer_json_with_the_new_counts(): void
+    {
+        $user = $this->userWithNotifications(3);
+        [$first, $second] = $user->notifications()->get()->all();
+        $this->actingAs($user);
+
+        $this->patchJson(route("notifications.read", $first->id))
+            ->assertOk()
+            ->assertExactJson(["message" => "Notification marked as read.", "unread_count" => 2, "total_count" => 3]);
+
+        $this->deleteJson(route("notifications.destroy", $second->id))
+            ->assertOk()
+            ->assertJson(["message" => "Notification deleted.", "unread_count" => 1, "total_count" => 2]);
+
+        $this->postJson(route("notifications.read-all"))->assertOk()->assertJson(["unread_count" => 0, "total_count" => 2]);
+
+        $this->deleteJson(route("notifications.destroy-read"))
+            ->assertOk()
+            ->assertJson(["message" => "2 read notifications deleted.", "unread_count" => 0, "total_count" => 0]);
+    }
+
+    public function test_several_selected_notifications_can_be_marked_read_or_deleted(): void
+    {
+        $user = $this->userWithNotifications(4);
+        $ids = $user->notifications()->pluck("id")->all();
+        $this->actingAs($user);
+
+        $this->postJson(route("notifications.bulk"), ["action" => "read", "ids" => [$ids[0], $ids[1]]])
+            ->assertOk()
+            ->assertJson(["message" => "2 notifications marked as read.", "unread_count" => 2]);
+
+        $this->postJson(route("notifications.bulk"), ["action" => "delete", "ids" => [$ids[0], $ids[2]]])
+            ->assertOk()
+            ->assertJson(["message" => "2 notifications deleted.", "total_count" => 2]);
+
+        $this->postJson(route("notifications.bulk"), ["action" => "archive", "ids" => [$ids[3]]])->assertUnprocessable();
+        $this->postJson(route("notifications.bulk"), ["action" => "read", "ids" => []])->assertUnprocessable();
+    }
+
+    public function test_bulk_ignores_other_users_notifications(): void
+    {
+        $owner = $this->userWithNotifications(1);
+        $theirs = $owner->notifications()->sole();
+        $this->actingAs($this->userWithNotifications(1));
+
+        $this->postJson(route("notifications.bulk"), ["action" => "delete", "ids" => [$theirs->id]])
+            ->assertOk()
+            ->assertJson(["message" => "0 notifications deleted."]);
+
+        $this->assertModelExists($theirs);
+    }
+
+    public function test_unread_tab_lists_only_unread_and_the_page_has_the_selection_tools(): void
+    {
+        $user = $this->userWithNotifications(3);
+        [$read] = $user->notifications()->get()->all();
+        $read->markAsRead();
+        $this->actingAs($user);
+
+        $this->get(route("notifications.index", ["filter" => "unread"]))
+            ->assertOk()
+            ->assertViewHas("notifications", fn ($page) => $page->total() === 2)
+            ->assertDontSee(route("notifications.open", $read->id), false);
+
+        $this->get(route("notifications.index"))
+            ->assertOk()
+            ->assertViewHas("notifications", fn ($page) => $page->total() === 3)
+            ->assertSee("Select all")
+            ->assertSee("js-notification-check", false)
+            ->assertSee("Today");
+    }
 }

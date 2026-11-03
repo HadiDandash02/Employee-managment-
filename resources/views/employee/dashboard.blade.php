@@ -25,7 +25,7 @@
                 ['Next birthday', $summary['days_to_birthday'] === 0 ? 'Today 🎉' : $summary['days_to_birthday'].' days', 'bi-cake2', 'warning', $employee->date_of_birth->format('d M')],
                 ['Skills', $summary['skills'], 'bi-stars', 'info', $summary['department_size'].' '.Str::plural('person', $summary['department_size']).' in your department'],
             ] as [$label, $value, $icon, $color, $hint])
-                <div class="col-sm-6 col-xl-3">
+                <div class="col-6 col-xl-3">
                     <div class="panel stat-card">
                         <span class="stat-icon bg-{{ $color }}-subtle text-{{ $color }}-emphasis"><i class="bi {{ $icon }}"></i></span>
                         <div>

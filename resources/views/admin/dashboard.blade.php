@@ -24,7 +24,7 @@
             ['Total payroll', number_format($stats['payroll'], 2), 'bi-wallet2', 'warning'],
             ['Users', number_format($stats['users']), 'bi-person-badge', 'secondary'],
         ] as [$label, $value, $icon, $color])
-            <div class="col-sm-6 col-xl">
+            <div class="col-6 col-xl">
                 <div class="panel stat-card">
                     <span class="stat-icon bg-{{ $color }}-subtle text-{{ $color }}-emphasis"><i class="bi {{ $icon }}"></i></span>
                     <div>
@@ -77,9 +77,7 @@
                                     </td>
                                     <td class="text-muted">{{ '@'.$user->username }}</td>
                                     <td>
-                                        <span class="badge rounded-pill bg-{{ $roleColor }}-subtle text-{{ $roleColor }}-emphasis border border-{{ $roleColor }}-subtle">
-                                            {{ $user->role_label }}
-                                        </span>
+                                        <x-role-badge :user="$user" />
                                     </td>
                                     <td class="small text-muted text-nowrap">{{ $user->created_at?->format('Y-m-d') }}</td>
                                     <td class="text-end pe-3">

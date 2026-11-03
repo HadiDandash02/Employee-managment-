@@ -43,9 +43,13 @@ class LeaveRequestServiceTest extends TestCase
         $this->manager = User::factory()->manager()->create(['employee_id' => $boss->id]);
     }
 
+    /**
+     * Fixed dates (Mon 9 – Tue 10 Nov 2026, 2 days): random factory dates could fall in next year,
+     * where only the 3 base days are earned yet, and approving would fail on the balance rule.
+     */
     private function pending(): LeaveRequest
     {
-        return LeaveRequest::factory()->create(['employee_id' => $this->worker->id]);
+        return LeaveRequest::factory()->create(['employee_id' => $this->worker->id, 'start_date' => '2026-11-09', 'end_date' => '2026-11-10']);
     }
 
     public function test_submit_creates_a_pending_request_and_its_history(): void

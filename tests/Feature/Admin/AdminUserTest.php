@@ -160,12 +160,15 @@ class AdminUserTest extends TestCase
         $this->assertStringNotContainsString('Log out', $sidebar);
 
         // Top bar, right side: today's date, then the profile with its menu:
-        // Add User + "My account & password" submenu (My account, Change password) + Log out.
+        // "My account & password" submenu (My account, Change password) + Log out.
         $topbar = Str::between($html, '<header class="topbar">', '</header>');
         $this->assertMatchesRegularExpression(
-            '/'.preg_quote(now()->format('l, d M Y'), '/').'.*Main Admin.*Add User.*My account &amp; password.*My account.*Change password.*Log out/s',
+            '/'.preg_quote(now()->format('l, d M Y'), '/').'.*Main Admin.*My account &amp; password.*My account.*Change password.*Log out/s',
             $topbar
         );
+        // "Add User" is only on the Manage Users page, not in the profile menu.
+        $this->assertStringNotContainsString('Add User', $topbar);
+        $this->get(route('admin.users.index'))->assertSee('Add User');
 
         // Employee role: only My Profile in the menu, no dashboard, users or employee list.
         $this->actingAs(User::factory()->create(['name' => 'Eve Employee']));

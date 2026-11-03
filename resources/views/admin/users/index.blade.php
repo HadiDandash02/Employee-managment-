@@ -151,7 +151,7 @@
             {
                 data: 'role', name: 'role',
                 render: (role, type, row) =>
-                    `<span class="badge rounded-pill bg-${row.role_color}-subtle text-${row.role_color}-emphasis border border-${row.role_color}-subtle fw-semibold">${esc(row.role_label)}</span>`,
+                    `<span class="role-badge role-${esc(row.role)}">${esc(row.role_label)}</span>`,
             },
             {
                 data: null, orderable: false, searchable: false,

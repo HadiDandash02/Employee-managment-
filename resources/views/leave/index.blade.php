@@ -4,14 +4,7 @@
 
 @push('styles')
     <style>
-        /* Teal header, like the other tables */
-        .leave-table thead th {
-            background: var(--brand); color: #fff; font-weight: 700; font-size: .78rem; white-space: nowrap;
-            border: 0; border-right: 1px solid rgba(255, 255, 255, .18); padding: .85rem .75rem;
-        }
-        .leave-table thead th:last-child { border-right: 0; }
-        .leave-table td { padding: .85rem .75rem; vertical-align: middle; font-size: .85rem; }
-        .leave-table tbody tr:hover > td { background: #f7fbfa; }
+        /* Header, rows and hover come from the shared table style in layouts/app.blade.php */
         .leave-reason { max-width: 18rem; }
     </style>
 @endpush

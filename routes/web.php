@@ -62,6 +62,7 @@ Route::middleware($loggedIn)->prefix('{panel}')->where(['panel' => $prefixes])->
     Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
     // Before /notifications/{notification}, so "read" is not taken as a notification id.
     Route::delete('/notifications/read', [NotificationController::class, 'destroyRead'])->name('notifications.destroy-read');
+    Route::post('/notifications/bulk', [NotificationController::class, 'bulk'])->name('notifications.bulk');
     Route::get('/notifications/{notification}', [NotificationController::class, 'open'])->name('notifications.open');
     Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
     Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');

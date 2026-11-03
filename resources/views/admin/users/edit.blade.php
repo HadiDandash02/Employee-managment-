@@ -21,7 +21,7 @@
                     <span>{{ '@'.$user->username }}</span>
                     <span aria-hidden="true">·</span>
                     <span><i class="bi bi-envelope me-1"></i>{{ $user->email }}</span>
-                    <span class="badge rounded-pill bg-{{ $user->role_color }}-subtle text-{{ $user->role_color }}-emphasis border border-{{ $user->role_color }}-subtle">{{ $user->role_label }}</span>
+                    <x-role-badge :user="$user" />
                     @unless ($user->is_active)
                         <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis border border-danger-subtle">Suspended</span>
                     @endunless
