@@ -5,6 +5,7 @@ namespace App\Services\Leave;
 use App\Enums\LeaveAction;
 use App\Enums\LeavePeriod;
 use App\Enums\LeaveStatus;
+use App\Events\LeaveRequestStatusChanged;
 use App\Exceptions\BusinessRuleException;
 use App\Models\Employee;
 use App\Models\LeaveRequest;
@@ -109,6 +110,7 @@ class LeaveRequestService
         });
 
         Notification::send($this->approversFor($leaveRequest), new LeaveRequestSubmitted($leaveRequest));
+        LeaveRequestStatusChanged::dispatch($leaveRequest, LeaveAction::Submitted, $by);
 
         return $leaveRequest;
     }
@@ -133,7 +135,7 @@ class LeaveRequestService
         // Only the employee who asked (LeaveRequestPolicy::cancel); the route checks it too.
         Gate::forUser($by)->authorize('cancel', $leaveRequest);
 
-        return DB::transaction(function () use ($leaveRequest, $by) {
+        $cancelled = DB::transaction(function () use ($leaveRequest, $by) {
             $locked = LeaveRequest::whereKey($leaveRequest->getKey())->lockForUpdate()->firstOrFail();
 
             $this->ensureTransition($locked, LeaveStatus::Cancelled);
@@ -146,6 +148,10 @@ class LeaveRequestService
 
             return $locked;
         });
+
+        LeaveRequestStatusChanged::dispatch($cancelled, LeaveAction::Cancelled, $by);
+
+        return $cancelled;
     }
 
     /**
@@ -201,6 +207,7 @@ class LeaveRequestService
         // The employee's login (users.employee_id), if they have one.
         $decided->load(['approver', 'employee.user']);
         $decided->employee?->user?->notify(new LeaveRequestDecided($decided, $comment));
+        LeaveRequestStatusChanged::dispatch($decided, $action, $approver);
 
         return $decided;
     }
