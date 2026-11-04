@@ -47,7 +47,7 @@ class UserController extends Controller
         $role = is_string($filters['role'] ?? null) ? $filters['role'] : '';
         $search = trim((string) data_get($request->query('search'), 'value', ''));
 
-        // Name filter and search box both match the name, username or email.
+        // Name filter: name, username or email. The search box searches every column (User::search()).
         $matches = function ($query, string $text) {
             $like = '%'.addcslashes($text, '%_\\').'%';
             $query->where(fn ($q) => $q->where('name', 'like', $like)->orWhere('username', 'like', $like)->orWhere('email', 'like', $like));
@@ -57,7 +57,7 @@ class UserController extends Controller
         $query = (clone $base)
             ->when($name !== '', fn ($q) => $matches($q, $name))
             ->when($role !== '', fn ($q) => $q->where('role', $role)) // combined with whereIn above: a hidden role gives no rows
-            ->when($search !== '', fn ($q) => $matches($q, $search));
+            ->search($search);
 
         $column = data_get($request->query('columns'), (int) data_get($request->query('order'), '0.column', -1));
         if (data_get($column, 'orderable') === 'true' && isset(self::SORTABLE[data_get($column, 'name')])) {
@@ -82,7 +82,7 @@ class UserController extends Controller
                 'role' => $user->role,
                 'role_label' => $user->role_label,
                 'role_color' => $user->role_color,
-                'created_at' => $user->created_at?->format('Y-m-d'),
+                'created_at' => $user->created_at?->format('d/m/Y'),
                 'employee' => $user->employee?->full_name,
                 'employee_url' => $user->employee && $actor->can('employees.view') ? route('employees.show', $user->employee) : null,
                 'is_active' => $user->is_active,
@@ -201,7 +201,7 @@ class UserController extends Controller
             'username' => ['required', 'string', 'max:50', 'regex:/^[A-Za-z0-9._-]+$/', Rule::unique('users', 'username')->ignore($user)],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user)],
             'role' => ['required', Rule::in($request->user()->manageableRoles())],
-            'password' => [$user ? 'nullable' : 'required', 'confirmed', Password::min(8)],
+            'password' => [$user ? 'nullable' : 'required', 'confirmed', Password::defaults()],
             'is_active' => ['sometimes', 'boolean'],
             // The employee record this login belongs to: required for the Employee role, one login per employee.
             'employee_id' => [

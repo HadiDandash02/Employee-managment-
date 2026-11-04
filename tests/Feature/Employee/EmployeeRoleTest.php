@@ -19,8 +19,8 @@ class EmployeeRoleTest extends TestCase
             'username' => 'olivia',
             'email' => 'olivia@example.com',
             'role' => 'employee',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'Passw0rd!2026',
+            'password_confirmation' => 'Passw0rd!2026',
         ], $overrides);
     }
 

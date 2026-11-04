@@ -19,6 +19,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    {{-- Date picker: shows dates as dd/mm/yyyy, sends yyyy-mm-dd to the server --}}
+    <link href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" rel="stylesheet">
     @stack('styles')
     <style>
         /* ================= Theme: one set of colour tokens for the whole system =================
@@ -445,6 +447,35 @@
         [data-theme="dark"] .theme-toggle .bi-moon-stars { display: none; }
         [data-theme="dark"] .theme-toggle .bi-sun { display: inline-block; color: #fbbf24; }
 
+        /* ---- Input with an icon or "@" in front: a clearly separate tinted box, then space before the text ---- */
+        .input-group > .input-group-text {
+            min-width: 2.75rem; justify-content: center; padding: 0 .85rem;
+            background: #f1f5f9; color: var(--ink-soft); border-color: var(--line); border-right: 1px solid #d5dbe5;
+        }
+        .input-group > .input-group-text ~ .form-control, .input-group > .input-group-text ~ .form-select { padding-left: .9rem; }
+        .input-group > .form-control, .input-group > .form-select { box-shadow: none; }
+        [data-theme="dark"] .input-group > .input-group-text { background: #172033; color: #cbd5e1; border-right-color: #2b3a52; }
+
+        /* ---- Password checklist (partials/password-rules): grey circle, then a green tick while typing ---- */
+        .password-rules { list-style: none; padding: .65rem .8rem; margin: .5rem 0 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr)); gap: .3rem .8rem;
+            font-size: .76rem; color: var(--muted); background: var(--hover); border: 1px solid var(--line-soft); border-radius: .6rem; }
+        .password-rules li { display: flex; align-items: center; gap: .4rem; transition: color .15s ease; }
+        .password-rules li.is-ok { color: #16a34a; font-weight: 600; }
+        [data-theme="dark"] .password-rules li.is-ok { color: #4ade80; }
+
+        /* ---- Date picker (Flatpickr) in the theme colours ---- */
+        .flatpickr-calendar { border-radius: var(--radius); box-shadow: var(--shadow-lg); border: 1px solid var(--line); }
+        .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange, .flatpickr-day.selected:hover { background: var(--brand); border-color: var(--brand); }
+        .flatpickr-day.today { border-color: var(--brand-border); }
+        .flatpickr-input[readonly] { background-color: var(--surface); cursor: pointer; }
+        [data-theme="dark"] .flatpickr-calendar, [data-theme="dark"] .flatpickr-months .flatpickr-month, [data-theme="dark"] .flatpickr-weekdays,
+        [data-theme="dark"] span.flatpickr-weekday, [data-theme="dark"] .flatpickr-monthDropdown-months { background: #111827; color: #e5e7eb; fill: #e5e7eb; }
+        [data-theme="dark"] .flatpickr-day { color: #e5e7eb; }
+        [data-theme="dark"] .flatpickr-day:hover { background: #1e293b; border-color: #1e293b; }
+        [data-theme="dark"] .flatpickr-day.flatpickr-disabled, [data-theme="dark"] .flatpickr-day.prevMonthDay, [data-theme="dark"] .flatpickr-day.nextMonthDay { color: #475569; }
+        [data-theme="dark"] .flatpickr-current-month input.cur-year, [data-theme="dark"] .flatpickr-months .flatpickr-prev-month, [data-theme="dark"] .flatpickr-months .flatpickr-next-month { color: #e5e7eb; fill: #e5e7eb; }
+        [data-theme="dark"] .flatpickr-input[readonly] { background-color: #0f172a; }
+
         /* ---- Phones (under 576px): nothing may stick out of the screen ---- */
         @media (max-width: 575.98px) {
             .app-content { padding: 1rem .8rem 2.5rem; }
@@ -644,6 +675,7 @@
     @endauth
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
     @auth
     <script>
         // Light / dark mode: the 🌙/☀️ button next to the bell.
@@ -836,6 +868,55 @@
          * "⋮" row-actions menu used by the DataTables (employees, users).
          * The menu is positioned "fixed" so it is never cut off by the table's sideways scroll.
          */
+        /*
+         * Dates as dd/mm/yyyy (Arabic/European order). Every <input type="date"> gets a Flatpickr date picker:
+         * the visible box shows "25/12/2026", the real (hidden) input keeps "2026-12-25" for the server,
+         * so controllers and validation stay the same. min/max on the input become the allowed range.
+         */
+        window.setDateValue = (input, value) => {
+            input.value = value;
+            input._flatpickr?.setDate(value || null, false);
+        };
+        document.querySelectorAll('input[type="date"]').forEach(input => {
+            if (typeof flatpickr === 'undefined') return; // CDN not reachable: the browser's own date field still works
+            flatpickr(input, {
+                dateFormat: 'Y-m-d',                // what the server receives
+                altInput: true, altFormat: 'd/m/Y', // what the user sees
+                allowInput: true,
+                minDate: input.min || null,
+                maxDate: input.max || null,
+                locale: { firstDayOfWeek: 1 },      // weeks start on Monday
+                onChange: () => input.dispatchEvent(new Event('change', { bubbles: true })),
+            });
+            // keep the placeholder and the red "is-invalid" border on the visible box
+            const visible = input._flatpickr.altInput;
+            visible.placeholder = 'dd/mm/yyyy';
+            if (input.classList.contains('is-invalid')) visible.classList.add('is-invalid');
+        });
+        // A form's "Clear"/reset button must also empty the visible dd/mm/yyyy boxes.
+        document.addEventListener('reset', event => setTimeout(() => {
+            event.target.querySelectorAll('input').forEach(input => input._flatpickr?.setDate(input.value || null, false));
+        }));
+
+        // Password checklist under a new-password field (partials/password-rules): the same rules as the server.
+        document.querySelectorAll('[data-password-rules]').forEach(list => {
+            const input = document.getElementById(list.dataset.passwordRules);
+            if (!input) return;
+            const rules = {
+                length: value => value.length >= 8,
+                upper: value => /[A-Z]/.test(value),
+                lower: value => /[a-z]/.test(value),
+                number: value => /\d/.test(value),
+                symbol: value => /[^A-Za-z0-9]/.test(value),
+            };
+            const check = () => list.querySelectorAll('[data-rule]').forEach(item => {
+                const ok = rules[item.dataset.rule](input.value);
+                item.classList.toggle('is-ok', ok);
+                item.querySelector('i').className = 'bi ' + (ok ? 'bi-check-circle-fill' : 'bi-circle');
+            });
+            input.addEventListener('input', check);
+            check();
+        });
         // Show / hide a password: any <button data-password-toggle="field-id"> (login, user form, …).
         document.addEventListener('click', event => {
             const button = event.target.closest('[data-password-toggle]');

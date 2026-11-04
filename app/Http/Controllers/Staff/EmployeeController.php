@@ -92,11 +92,11 @@ class EmployeeController extends Controller
                 'department_color' => $employee->department_color,
                 'salary' => (float) $employee->salary,
                 'salary_formatted' => number_format($employee->salary, 2),
-                'date_of_birth' => $employee->date_of_birth->format('Y-m-d'),
+                'date_of_birth' => $employee->date_of_birth->format('d/m/Y'),
                 'date_of_birth_formatted' => $employee->date_of_birth->format('d M Y'),
                 'age' => $employee->age,
-                'hire_date' => $employee->profile?->hire_date?->format('Y-m-d'),
-                'added_on' => $employee->created_at?->format('Y-m-d H:i:s'),
+                'hire_date' => $employee->profile?->hire_date?->format('d/m/Y'),
+                'added_on' => $employee->created_at?->format('d/m/Y H:i'),
                 'deleted_at' => $employee->deleted_at?->format('Y-m-d H:i'),
                 // The login linked to this employee (users.employee_id), if any.
                 'login' => $employee->user ? [

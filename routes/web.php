@@ -136,6 +136,7 @@ Route::middleware($loggedIn)->prefix('{panel}')->where(['panel' => $prefixes])->
     // Admin / HR Routes: Manage Departments (/admin/departments, /hr/departments)
     Route::middleware('can:departments.manage')->name('admin.')->group(function () {
         Route::get('/departments', [DepartmentController::class, 'index'])->name('departments.index');
+        Route::get('/departments/data', [DepartmentController::class, 'data'])->name('departments.data');
         Route::get('/departments/create', [DepartmentController::class, 'create'])->name('departments.create');
         Route::post('/departments', [DepartmentController::class, 'store'])->name('departments.store');
         Route::get('/departments/{department}/edit', [DepartmentController::class, 'edit'])->name('departments.edit');

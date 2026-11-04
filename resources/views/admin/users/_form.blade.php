@@ -128,12 +128,13 @@
                         <div class="input-group has-validation">
                             <span class="input-group-text"><i class="bi bi-lock"></i></span>
                             <input type="password" id="password" name="password" autocomplete="new-password" @required(! $user->exists)
-                                   class="form-control border-end-0 @error('password') is-invalid @enderror" placeholder="At least 8 characters">
+                                   class="form-control border-end-0 @error('password') is-invalid @enderror" placeholder="Strong password">
                             <button type="button" class="btn password-toggle" data-password-toggle="password" aria-label="Show password" aria-pressed="false">
                                 <i class="bi bi-eye"></i>
                             </button>
                             @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
+                        @include('partials.password-rules', ['for' => 'password'])
                     </div>
                     <div class="col-md-6">
                         <label for="password_confirmation" class="form-label">Confirm password @unless ($user->exists)<span class="text-danger">*</span>@endunless</label>

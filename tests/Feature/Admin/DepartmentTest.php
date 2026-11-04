@@ -40,14 +40,18 @@ class DepartmentTest extends TestCase
 
         $this->assertSame(url('/admin/departments'), route('admin.departments.index'));
 
-        $this->get(route('admin.departments.index'))
+        // The page itself is the empty DataTable; the rows come from the JSON endpoint.
+        $this->get(route('admin.departments.index'))->assertOk()->assertSee('Manage Departments')->assertSee('departments-table', false);
+
+        $this->getJson(route('admin.departments.data'))
             ->assertOk()
-            ->assertSee('Manage Departments')
-            ->assertSee('Logistics')
-            ->assertSee('LOG-7')
-            ->assertSee($department->branch->name)
-            ->assertSee($department->branch->company->name)
-            ->assertViewHas('departments', fn ($departments) => $departments->first()->employees_count === 2);
+            ->assertJsonPath('recordsTotal', 1)
+            ->assertJsonPath('data.0.name', 'Logistics')
+            ->assertJsonPath('data.0.code', 'LOG-7')
+            ->assertJsonPath('data.0.branch', $department->branch->name)
+            ->assertJsonPath('data.0.company', $department->branch->company->name)
+            ->assertJsonPath('data.0.employees_count', 2)
+            ->assertJsonPath('data.0.created_at', $department->created_at->format('d/m/Y'));
     }
 
     public function test_index_has_no_n_plus_one_queries(): void
@@ -56,7 +60,7 @@ class DepartmentTest extends TestCase
             Department::factory($departments)->create();
             DB::flushQueryLog();
             DB::enableQueryLog();
-            $this->get(route('admin.departments.index'))->assertOk();
+            $this->getJson(route('admin.departments.data', ['length' => 100]))->assertOk();
             $count = count(DB::getQueryLog());
             DB::disableQueryLog();
 
@@ -69,13 +73,43 @@ class DepartmentTest extends TestCase
         $this->assertSame($few, $many, 'The number of queries must not grow with the number of departments.');
     }
 
-    public function test_index_can_be_searched_by_name_or_code(): void
+    public function test_the_search_box_searches_every_column(): void
     {
-        Department::factory()->create(['name' => 'Logistics', 'code' => 'LOG-1']);
+        $logistics = Department::factory()->create(['name' => 'Logistics', 'code' => 'LOG-1', 'description' => 'Trucks and warehouses']);
         Department::factory()->create(['name' => 'Finance', 'code' => 'FIN-1']);
+        $logistics->branch->update(['name' => 'Harbour', 'city' => 'Tyre']);
+        $logistics->branch->company->update(['name' => 'Cedar Shipping']);
 
-        $this->get(route('admin.departments.index', ['search' => 'log']))->assertSee('Logistics')->assertDontSee('FIN-1');
-        $this->get(route('admin.departments.index', ['search' => 'FIN-1']))->assertSee('Finance')->assertDontSee('LOG-1');
+        $names = fn (string $search) => collect($this->getJson(route('admin.departments.data', ['search' => ['value' => $search]]))->json('data'))->pluck('name')->all();
+
+        $this->assertSame(['Logistics'], $names('log'));            // name
+        $this->assertSame(['Finance'], $names('FIN-1'));            // code
+        $this->assertSame(['Logistics'], $names('warehouses'));     // description
+        $this->assertSame(['Logistics'], $names('harbour'));        // branch
+        $this->assertSame(['Logistics'], $names('tyre'));           // city
+        $this->assertSame(['Logistics'], $names('cedar'));          // company
+        $this->assertSame(['Logistics'], $names('trucks tyre'));    // every word must match
+        $this->assertSame([], $names('nothing-matches'));
+    }
+
+    public function test_the_table_filters_sorts_and_pages(): void
+    {
+        $staffed = Department::factory()->create(['name' => 'Alpha']);
+        Employee::factory()->for($staffed)->create();
+        Department::factory(11)->create();
+
+        $page = $this->getJson(route('admin.departments.data', ['length' => 10, 'start' => 10]))->json();
+        $this->assertSame(12, $page['recordsFiltered']);
+        $this->assertCount(2, $page['data']);
+
+        $withEmployees = $this->getJson(route('admin.departments.data', ['filters' => ['staffed' => 'yes']]))->json('data');
+        $this->assertSame(['Alpha'], array_column($withEmployees, 'name'));
+
+        $byCount = $this->getJson(route('admin.departments.data', [
+            'columns' => [4 => ['name' => 'employees_count', 'orderable' => 'true']],
+            'order' => [['column' => 4, 'dir' => 'desc']],
+        ]))->json('data.0.name');
+        $this->assertSame('Alpha', $byCount);
     }
 
     public function test_department_can_be_created_and_code_is_uppercased(): void
@@ -146,7 +180,24 @@ class DepartmentTest extends TestCase
             ->assertSessionHas('success');
 
         $this->assertSoftDeleted($department);
-        $this->get(route('admin.departments.index'))->assertDontSee($department->code);
+        $this->getJson(route('admin.departments.data'))->assertJsonPath('recordsTotal', 0);
+    }
+
+    public function test_delete_from_the_table_answers_json(): void
+    {
+        $empty = Department::factory()->create(['name' => 'Empty']);
+        $busy = Department::factory()->create(['name' => 'Busy']);
+        Employee::factory()->for($busy)->create();
+
+        $this->deleteJson(route('admin.departments.destroy', $busy))
+            ->assertStatus(422)
+            ->assertJson(['message' => 'Busy still has 1 employee. Move them to another department first.']);
+        $this->deleteJson(route('admin.departments.destroy', $empty))
+            ->assertOk()
+            ->assertJson(['message' => 'Department Empty deleted.']);
+
+        $this->assertNotSoftDeleted($busy);
+        $this->assertSoftDeleted($empty);
     }
 
     public function test_department_with_employees_cannot_be_deleted(): void

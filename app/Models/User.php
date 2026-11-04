@@ -3,7 +3,9 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Support\Search;
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -60,6 +62,42 @@ class User extends Authenticatable
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    /**
+     * Search every column of the users list: # (id), name, username, email, role (e.g. "manager"),
+     * the linked employee's name and the created date (dd/mm/yyyy or mm/yyyy). Every word must match.
+     */
+    public function scopeSearch(Builder $query, ?string $term): Builder
+    {
+        $roles = config('permissions.roles');
+
+        foreach (Search::words($term) as $word) {
+            $like = Search::like($word);
+            $date = Search::date($word);
+            $matchingRoles = array_keys(array_filter($roles, fn (array $role) => stripos($role['label'], $word) !== false));
+
+            $query->where(function (Builder $q) use ($word, $like, $date, $matchingRoles) {
+                $q->where('users.name', 'like', $like)
+                    ->orWhere('users.username', 'like', $like)
+                    ->orWhere('users.email', 'like', $like)
+                    ->orWhereHas('employee', fn (Builder $e) => $e->where('first_name', 'like', $like)->orWhere('last_name', 'like', $like));
+
+                if ($matchingRoles) {
+                    $q->orWhereIn('users.role', $matchingRoles);
+                }
+
+                if (ctype_digit($word)) {
+                    $q->orWhere('users.id', (int) $word);
+                }
+
+                if ($date) {
+                    $q->orWhere('users.created_at', 'like', $date.'%');
+                }
+            });
+        }
+
+        return $query;
     }
 
     public function isAdmin(): bool

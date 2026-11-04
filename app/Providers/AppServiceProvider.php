@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -23,6 +24,10 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Paginator::useBootstrapFive();
+
+        // One password rule for the whole app (Password::defaults() in UserController and AccountController):
+        // at least 8 characters, with upper- and lowercase letters, a number and a special character.
+        Password::defaults(fn () => Password::min(8)->letters()->mixedCase()->numbers()->symbols());
 
         // Each permission in config/permissions.php becomes a Gate: @can('employees.create'), can:employees.create …
         foreach (array_keys(config('permissions.permissions')) as $permission) {

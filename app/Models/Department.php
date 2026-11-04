@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Search;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -41,18 +42,24 @@ class Department extends Model
     }
 
     /**
-     * Search by name or code.
+     * Search every column of the departments list: name, code, description, branch (name, city) and company.
+     * Every word must match one of the columns, so "sales tripoli" finds Sales in the Tripoli branch.
      */
     public function scopeSearch(Builder $query, ?string $term): Builder
     {
-        $term = trim((string) $term);
+        foreach (Search::words($term) as $word) {
+            $like = Search::like($word);
 
-        if ($term === '') {
-            return $query;
+            $query->where(fn (Builder $q) => $q
+                ->where('departments.name', 'like', $like)
+                ->orWhere('departments.code', 'like', $like)
+                ->orWhere('departments.description', 'like', $like)
+                ->orWhereHas('branch', fn (Builder $b) => $b
+                    ->where('name', 'like', $like)
+                    ->orWhere('city', 'like', $like)
+                    ->orWhereHas('company', fn (Builder $c) => $c->where('name', 'like', $like))));
         }
 
-        $like = '%'.addcslashes($term, '%_\\').'%';
-
-        return $query->where(fn (Builder $q) => $q->where('name', 'like', $like)->orWhere('code', 'like', $like));
+        return $query;
     }
 }

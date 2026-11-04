@@ -44,13 +44,13 @@ class AdminUserTest extends TestCase
             'username' => 'new_manager',
             'email' => 'manager@example.com',
             'role' => 'manager',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'Passw0rd!2026',
+            'password_confirmation' => 'Passw0rd!2026',
         ])->assertRedirect(route('admin.users.index'));
 
         $user = User::where('username', 'new_manager')->sole();
         $this->assertSame('manager', $user->role);
-        $this->assertTrue(Hash::check('password123', $user->password));
+        $this->assertTrue(Hash::check('Passw0rd!2026', $user->password));
     }
 
     public function test_create_user_validates_input(): void
@@ -199,8 +199,8 @@ class AdminUserTest extends TestCase
             'username' => 'sneaky',
             'email' => 'sneaky@example.com',
             'role' => 'admin',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'Passw0rd!2026',
+            'password_confirmation' => 'Passw0rd!2026',
         ])->assertSessionHasErrors('role');
 
         $this->assertDatabaseMissing('users', ['username' => 'sneaky']);
@@ -216,8 +216,8 @@ class AdminUserTest extends TestCase
             'username' => 'hr2',
             'email' => 'hr2@example.com',
             'role' => 'hr',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'Passw0rd!2026',
+            'password_confirmation' => 'Passw0rd!2026',
         ])->assertSessionHasNoErrors();
 
         $this->put(route('admin.users.update', $viewer), [

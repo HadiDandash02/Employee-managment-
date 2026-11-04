@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Search;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -130,22 +131,39 @@ class Employee extends Model
     ];
 
     /**
-     * Filter employees by name, email or department name.
+     * Search every column of the employee list: # (id), name, email, salary, date of birth, added on,
+     * department (name, code), branch (name, city), phone, address, hire date and login username.
+     * Dates are typed dd/mm/yyyy (or mm/yyyy for a whole month).
      *
      * Every word must match one of the columns, so "jane doe" or "doe sales" also work.
      */
     public function scopeSearch(Builder $query, ?string $term): Builder
     {
-        $words = preg_split('/\s+/', trim((string) $term), -1, PREG_SPLIT_NO_EMPTY);
+        foreach (Search::words($term) as $word) {
+            $like = Search::like($word);
+            $date = Search::date($word);
 
-        foreach ($words as $word) {
-            $like = '%'.addcslashes($word, '%_\\').'%';
+            $query->where(function (Builder $q) use ($word, $like, $date) {
+                $q->where('employees.first_name', 'like', $like)
+                    ->orWhere('employees.last_name', 'like', $like)
+                    ->orWhere('employees.email', 'like', $like)
+                    ->orWhere('employees.salary', 'like', $like)
+                    ->orWhereHas('department', fn (Builder $d) => $d
+                        ->where('name', 'like', $like)
+                        ->orWhere('code', 'like', $like)
+                        ->orWhereHas('branch', fn (Builder $b) => $b->where('name', 'like', $like)->orWhere('city', 'like', $like)))
+                    ->orWhereHas('profile', fn (Builder $p) => $p->where('phone', 'like', $like)->orWhere('address', 'like', $like))
+                    ->orWhereHas('user', fn (Builder $u) => $u->where('username', 'like', $like));
 
-            $query->where(function (Builder $q) use ($like) {
-                $q->where('first_name', 'like', $like)
-                    ->orWhere('last_name', 'like', $like)
-                    ->orWhere('email', 'like', $like)
-                    ->orWhereHas('department', fn (Builder $d) => $d->where('name', 'like', $like));
+                if (ctype_digit($word)) {
+                    $q->orWhere('employees.id', (int) $word);
+                }
+
+                if ($date) {
+                    $q->orWhere('employees.date_of_birth', 'like', $date.'%')
+                        ->orWhere('employees.created_at', 'like', $date.'%')
+                        ->orWhereHas('profile', fn (Builder $p) => $p->where('hire_date', 'like', $date.'%'));
+                }
             });
         }
 

@@ -34,11 +34,11 @@ class AccountTest extends TestCase
 
         $this->changePassword($user, [
             'current_password' => 'old-password',
-            'password' => 'brand-new-pass',
-            'password_confirmation' => 'brand-new-pass',
+            'password' => 'Brand-New-Pass1',
+            'password_confirmation' => 'Brand-New-Pass1',
         ])->assertRedirect(route('account.edit'))->assertSessionHas('success');
 
-        $this->assertTrue(Hash::check('brand-new-pass', $user->fresh()->password));
+        $this->assertTrue(Hash::check('Brand-New-Pass1', $user->fresh()->password));
         $this->assertAuthenticatedAs($user);
     }
 
@@ -48,8 +48,8 @@ class AccountTest extends TestCase
 
         $this->changePassword($user, [
             'current_password' => 'not-it',
-            'password' => 'brand-new-pass',
-            'password_confirmation' => 'brand-new-pass',
+            'password' => 'Brand-New-Pass1',
+            'password_confirmation' => 'Brand-New-Pass1',
         ])->assertSessionHasErrorsIn('password', ['current_password']);
 
         $this->assertTrue(Hash::check('old-password', $user->fresh()->password));

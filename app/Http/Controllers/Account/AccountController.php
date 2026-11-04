@@ -22,7 +22,7 @@ class AccountController extends Controller
     {
         $data = $request->validateWithBag('password', [
             'current_password' => ['required', 'current_password'],
-            'password' => ['required', 'confirmed', 'different:current_password', Password::min(8)],
+            'password' => ['required', 'confirmed', 'different:current_password', Password::defaults()],
         ], [
             'current_password.current_password' => 'Your current password is incorrect.',
             'password.different' => 'The new password must be different from the current one.',

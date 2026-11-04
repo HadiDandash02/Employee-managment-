@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\LeavePeriod;
 use App\Enums\LeaveStatus;
+use App\Support\Search;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -163,20 +164,49 @@ class LeaveRequest extends Model
     }
 
     /**
-     * Search by the employee's name or the reason. Every word must match, so "sam trip" works.
+     * Search every column of the leave list: # (id), employee name, department, dates (dd/mm/yyyy or mm/yyyy),
+     * days, reason, status (e.g. "pending") and who decided. Every word must match, so "sam trip" works.
      */
     public function scopeSearch(Builder $query, ?string $term): Builder
     {
-        $words = preg_split('/\s+/', trim((string) $term), -1, PREG_SPLIT_NO_EMPTY);
+        foreach (Search::words($term) as $word) {
+            $like = Search::like($word);
+            $date = Search::date($word);
+            // "pend" → pending: compare with the status labels, not the stored values only
+            $statuses = array_values(array_filter(LeaveStatus::cases(), fn (LeaveStatus $s) => stripos($s->label(), $word) !== false));
 
-        foreach ($words as $word) {
-            $like = '%'.addcslashes($word, '%_\\').'%';
+            $query->where(function (Builder $q) use ($word, $like, $date, $statuses) {
+                $q->where('leave_requests.reason', 'like', $like)
+                    ->orWhereHas('employee', fn (Builder $e) => $e
+                        ->where('first_name', 'like', $like)
+                        ->orWhere('last_name', 'like', $like)
+                        ->orWhereHas('department', fn (Builder $d) => $d->where('name', 'like', $like)))
+                    ->orWhereHas('approver', fn (Builder $u) => $u->where('name', 'like', $like));
 
-            $query->where(fn (Builder $q) => $q
-                ->where('reason', 'like', $like)
-                ->orWhereHas('employee', fn (Builder $e) => $e
-                    ->where('first_name', 'like', $like)
-                    ->orWhere('last_name', 'like', $like)));
+                if ($statuses) {
+                    $q->orWhereIn('leave_requests.status', $statuses);
+                }
+
+                if (is_numeric($word)) {
+                    $q->orWhere('leave_requests.days', (float) $word);
+                }
+
+                if (ctype_digit($word)) {
+                    $q->orWhere('leave_requests.id', (int) $word);
+                }
+
+                if ($date) {
+                    $q->orWhere('leave_requests.start_date', 'like', $date.'%')
+                        ->orWhere('leave_requests.end_date', 'like', $date.'%');
+
+                    // a full day (25/12/2026) also finds the leaves that cover it
+                    if (strlen($date) === 10) {
+                        $q->orWhere(fn (Builder $range) => $range
+                            ->whereDate('leave_requests.start_date', '<=', $date)
+                            ->whereDate('leave_requests.end_date', '>=', $date));
+                    }
+                }
+            });
         }
 
         return $query;

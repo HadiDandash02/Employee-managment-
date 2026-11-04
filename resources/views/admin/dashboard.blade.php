@@ -79,7 +79,7 @@
                                     <td>
                                         <x-role-badge :user="$user" />
                                     </td>
-                                    <td class="small text-muted text-nowrap">{{ $user->created_at?->format('Y-m-d') }}</td>
+                                    <td class="small text-muted text-nowrap">{{ $user->created_at?->format('d/m/Y') }}</td>
                                     <td class="text-end pe-3">
                                         {{-- One "⋮" button; the actions open in a small menu --}}
                                         <div class="dropdown actions-menu d-inline-block">

@@ -168,7 +168,7 @@ class EmployeeTest extends TestCase
 
         $asc = $this->dataTable(['order' => [['column' => 7, 'dir' => 'asc']]]);
         $this->assertSame(['Old X', 'Mid X', 'New X'], $this->names($asc));
-        $this->assertSame('2015-01-10', $asc->json('data.0.hire_date'));
+        $this->assertSame('10/01/2015', $asc->json('data.0.hire_date'));
 
         $this->assertSame(['New X', 'Mid X', 'Old X'], $this->names($this->dataTable(['order' => [['column' => 7, 'dir' => 'desc']]])));
     }

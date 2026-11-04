@@ -47,8 +47,9 @@
                         <div class="col-md-6">
                             <label for="password" class="form-label">New password <span class="text-danger">*</span></label>
                             <input type="password" id="password" name="password" autocomplete="new-password" required minlength="8"
-                                   class="form-control @error('password', 'password') is-invalid @enderror" placeholder="At least 8 characters">
+                                   class="form-control @error('password', 'password') is-invalid @enderror" placeholder="Strong password">
                             @error('password', 'password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            @include('partials.password-rules', ['for' => 'password'])
                         </div>
                         <div class="col-md-6">
                             <label for="password_confirmation" class="form-label">Confirm new password <span class="text-danger">*</span></label>

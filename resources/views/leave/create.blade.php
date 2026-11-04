@@ -279,8 +279,9 @@
 
     // Quick choices: one day, whole / morning / afternoon.
     document.querySelectorAll('[data-preset]').forEach(button => button.addEventListener('click', () => {
-        if (!start.value) start.value = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD, local date
-        end.value = start.value;
+        // setDateValue(): also updates the dd/mm/yyyy date picker (layouts/app.blade.php)
+        if (!start.value) setDateValue(start, new Date().toLocaleDateString('en-CA')); // YYYY-MM-DD, local date
+        setDateValue(end, start.value);
         const preset = button.dataset.preset;
         setPeriod('start_period', preset === 'afternoon' ? 'afternoon' : 'morning');
         setPeriod('end_period', preset === 'morning' ? 'morning' : 'afternoon');
@@ -288,7 +289,8 @@
     }));
 
     start.addEventListener('change', () => {
-        if (!end.value || end.value < start.value) end.value = start.value;
+        if (!end.value || end.value < start.value) setDateValue(end, start.value);
+        end._flatpickr?.set('minDate', start.value || null); // the end date cannot be before the start
         refresh();
     });
     end.addEventListener('change', refresh);
