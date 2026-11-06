@@ -223,7 +223,8 @@ class LeaveRequestService
             ->filter(fn (array $role) => array_intersect(['*', 'leave.approve'], $role['permissions']) !== [])
             ->keys();
 
-        return User::whereIn('role', $roles)
+        // any of the user's roles (users.roles), e.g. an Employee who is also a Manager
+        return User::where(fn ($query) => $roles->each(fn (string $role) => $query->orWhere('roles', 'like', '%"'.$role.'"%')))
             ->where('is_active', true)
             ->with('employee')
             ->get()

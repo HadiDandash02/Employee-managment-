@@ -28,7 +28,7 @@
                 <div class="row g-3">
                     <div class="col-md-6 col-lg-4">
                         <label for="f-company" class="form-label">Select company</label>
-                        <select id="f-company" name="company_id" class="form-select select-divider">
+                        <select data-searchable id="f-company" name="company_id" class="form-select select-divider">
                             <option value="">Select company</option>
                             @foreach ($companies as $company)
                                 <option value="{{ $company->id }}">{{ $company->name }}</option>
@@ -37,7 +37,7 @@
                     </div>
                     <div class="col-md-6 col-lg-4">
                         <label for="f-branch" class="form-label">Select branch</label>
-                        <select id="f-branch" name="branch_id" class="form-select select-divider">
+                        <select data-searchable id="f-branch" name="branch_id" class="form-select select-divider">
                             <option value="">Select branch</option>
                             @foreach ($branches as $branch)
                                 <option value="{{ $branch->id }}">{{ $branch->company?->name }} · {{ $branch->name }}</option>
@@ -46,7 +46,7 @@
                     </div>
                     <div class="col-md-6 col-lg-4">
                         <label for="f-staffed" class="form-label">Employees</label>
-                        <select id="f-staffed" name="staffed" class="form-select select-divider">
+                        <select data-searchable id="f-staffed" name="staffed" class="form-select select-divider">
                             <option value="">All departments</option>
                             <option value="yes">With employees</option>
                             <option value="no">Without employees</option>

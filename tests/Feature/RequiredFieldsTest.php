@@ -52,10 +52,10 @@ class RequiredFieldsTest extends TestCase
         $user = User::factory()->create(['name' => 'Keep']);
 
         $this->post(route('admin.users.store'), [])
-            ->assertSessionHasErrors(['name', 'username', 'email', 'role', 'password']);
+            ->assertSessionHasErrors(['name', 'username', 'email', 'roles', 'password']);
 
-        $this->put(route('admin.users.update', $user), ['name' => '', 'username' => '', 'email' => '', 'role' => ''])
-            ->assertSessionHasErrors(['name', 'username', 'email', 'role']);
+        $this->put(route('admin.users.update', $user), ['name' => '', 'username' => '', 'email' => '', 'roles' => []])
+            ->assertSessionHasErrors(['name', 'username', 'email', 'roles']);
 
         $this->assertSame('Keep', $user->fresh()->name);
     }

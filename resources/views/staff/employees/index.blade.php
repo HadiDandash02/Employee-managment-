@@ -27,7 +27,7 @@
                 <div class="row g-3">
                     <div class="col-md-4">
                         <label for="f-department" class="form-label">Select department</label>
-                        <select id="f-department" name="department_id" class="form-select select-divider">
+                        <select data-searchable id="f-department" name="department_id" class="form-select select-divider">
                             <option value="">Select department</option>
                             @foreach ($departments->groupBy('location') as $location => $group)
                                 <optgroup label="{{ $location }}">
@@ -40,7 +40,7 @@
                     </div>
                     <div class="col-md-4">
                         <label for="f-branch" class="form-label">Select branch</label>
-                        <select id="f-branch" name="branch_id" class="form-select select-divider">
+                        <select data-searchable id="f-branch" name="branch_id" class="form-select select-divider">
                             <option value="">Select branch</option>
                             @foreach ($branches->groupBy(fn ($branch) => $branch->company?->name ?? 'No company') as $company => $group)
                                 <optgroup label="{{ $company }}">

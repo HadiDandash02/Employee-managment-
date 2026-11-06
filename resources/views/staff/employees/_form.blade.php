@@ -62,7 +62,7 @@
                 <label for="department_id" class="form-label">Department <span class="text-danger">*</span></label>
                 <div class="input-group has-validation">
                     <span class="input-group-text"><i class="bi bi-diagram-3"></i></span>
-                    <select id="department_id" name="department_id" required
+                    <select data-searchable id="department_id" name="department_id" required
                             class="form-select @error('department_id') is-invalid @enderror">
                         <option value="">Choose a department</option>
                         @foreach (($departments ?? collect())->groupBy('location') as $location => $group)

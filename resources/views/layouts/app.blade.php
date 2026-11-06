@@ -21,6 +21,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     {{-- Date picker: shows dates as dd/mm/yyyy, sends yyyy-mm-dd to the server --}}
     <link href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" rel="stylesheet">
+    {{-- Searchable dropdowns: <select data-searchable> --}}
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
     @stack('styles')
     <style>
         /* ================= Theme: one set of colour tokens for the whole system =================
@@ -447,6 +449,19 @@
         [data-theme="dark"] .theme-toggle .bi-moon-stars { display: none; }
         [data-theme="dark"] .theme-toggle .bi-sun { display: inline-block; color: #fbbf24; }
 
+        /* ---- Field with its icon INSIDE, on the left (the modern look):
+               <div class="field-icon"><i class="bi bi-person"></i><input class="form-control">…</div>
+               The icon turns brand-coloured while typing. A password "eye" button sits inside on the right. ---- */
+        .field-icon { position: relative; }
+        .field-icon > .bi:first-child { position: absolute; left: .95rem; top: 1.3rem; transform: translateY(-50%); color: #94a3b8; font-size: 1rem; pointer-events: none; z-index: 5; transition: color .15s ease; }
+        .field-icon > .form-control { padding-left: 2.6rem; min-height: 2.6rem; border-radius: .65rem; }
+        .field-icon:focus-within > .bi:first-child { color: var(--brand); }
+        .field-icon > .form-control.is-invalid ~ .bi, .field-icon:has(.is-invalid) > .bi:first-child { color: var(--bs-form-invalid-color); }
+        .field-icon > .form-control.has-toggle { padding-right: 2.9rem; background-position: right 2.7rem center; }
+        .field-icon > .password-toggle { position: absolute; right: .3rem; top: 1.3rem; transform: translateY(-50%); border: 0; background: transparent; padding: .3rem .55rem; border-radius: .45rem; z-index: 5; }
+        .field-icon > .password-toggle:hover, .field-icon > .password-toggle:focus { background: var(--hover); }
+        .field-icon + .form-text { margin-top: .4rem; font-size: .76rem; }
+
         /* ---- Input with an icon or "@" in front: a clearly separate tinted box, then space before the text ---- */
         .input-group > .input-group-text {
             min-width: 2.75rem; justify-content: center; padding: 0 .85rem;
@@ -475,6 +490,36 @@
         [data-theme="dark"] .flatpickr-day.flatpickr-disabled, [data-theme="dark"] .flatpickr-day.prevMonthDay, [data-theme="dark"] .flatpickr-day.nextMonthDay { color: #475569; }
         [data-theme="dark"] .flatpickr-current-month input.cur-year, [data-theme="dark"] .flatpickr-months .flatpickr-prev-month, [data-theme="dark"] .flatpickr-months .flatpickr-next-month { color: #e5e7eb; fill: #e5e7eb; }
         [data-theme="dark"] .flatpickr-input[readonly] { background-color: #0f172a; }
+
+        /* ---- Searchable dropdowns (Tom Select on <select data-searchable>) ---- */
+        .ts-wrapper.form-select { padding: 0; min-height: 2.45rem; }
+        .ts-wrapper .ts-control { border: 0; background: transparent; box-shadow: none !important; padding: .55rem 3.2rem .55rem .85rem; min-height: 2.35rem; font-size: .85rem; color: var(--ink); }
+        /* several choices (e.g. roles): each one is a chip with an ✕ */
+        .ts-wrapper.multi .ts-control { padding: .35rem 2.4rem .35rem .45rem; gap: .3rem; }
+        .ts-wrapper.multi .ts-control > .item { background: var(--brand-light); color: var(--brand-darker); border: 1px solid var(--brand-border); border-radius: 999px; padding: .15rem .3rem .15rem .65rem; font-weight: 600; font-size: .78rem; margin: 0; }
+        .ts-wrapper.multi .ts-control > .item .remove { border-left: 0; margin-left: .25rem; padding: 0 .35rem; border-radius: 999px; color: inherit; opacity: .7; }
+        .ts-wrapper.multi .ts-control > .item .remove:hover { background: rgba(79, 70, 229, .15); opacity: 1; }
+        .ts-wrapper.multi .ts-control > input { min-width: 6rem; }
+        [data-theme="dark"] .ts-wrapper.multi .ts-control > .item { color: #c7d2fe; }
+        .ts-wrapper.focus { border-color: #a5b4fc; box-shadow: var(--focus-ring); }
+        .ts-wrapper.is-invalid, .was-validated .ts-wrapper:invalid { border-color: var(--bs-form-invalid-border-color); }
+        .input-group > .ts-wrapper { flex: 1 1 auto; width: 1%; }
+        .input-group > .input-group-text + .ts-wrapper { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+        .ts-dropdown { border: 1px solid var(--line); border-radius: .6rem; box-shadow: var(--shadow-lg); margin-top: .3rem; overflow: hidden; font-size: .85rem; z-index: 1060; }
+        .ts-dropdown .dropdown-input-wrap { padding: .5rem; border-bottom: 1px solid var(--line-soft); }
+        .ts-dropdown .dropdown-input { border: 1px solid var(--line); border-radius: .5rem; padding: .45rem .7rem .45rem 2rem; width: 100%;
+            background: var(--surface) url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%2394a3b8'%3e%3cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398l3.85 3.85a1 1 0 0 0 1.415-1.414zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0'/%3e%3c/svg%3e") no-repeat .65rem center / .85rem; color: var(--ink); }
+        .ts-dropdown .dropdown-input:focus { outline: 0; border-color: #a5b4fc; box-shadow: var(--focus-ring); }
+        .ts-dropdown .option { padding: .5rem .85rem; }
+        .ts-dropdown .active { background: var(--brand-light); color: var(--brand-darker); }
+        .ts-dropdown .selected { font-weight: 600; }
+        .ts-dropdown .optgroup-header { font-size: .7rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: .55rem .85rem .3rem; }
+        .ts-dropdown .no-results { padding: .6rem .85rem; color: var(--muted); }
+        .ts-dropdown .highlight { background: rgba(79, 70, 229, .18); border-radius: 2px; }
+        [data-theme="dark"] .ts-wrapper.form-select { background-color: #0f172a; }
+        [data-theme="dark"] .ts-dropdown, [data-theme="dark"] .ts-dropdown .dropdown-input { background-color: #111827; color: var(--ink); }
+        [data-theme="dark"] .ts-dropdown .active { background: rgba(99, 102, 241, .22); color: #fff; }
+        [data-theme="dark"] .ts-dropdown .optgroup-header { background: #111827; }
 
         /* ---- Phones (under 576px): nothing may stick out of the screen ---- */
         @media (max-width: 575.98px) {
@@ -676,6 +721,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
     @auth
     <script>
         // Light / dark mode: the 🌙/☀️ button next to the bell.
@@ -893,9 +939,31 @@
             visible.placeholder = 'dd/mm/yyyy';
             if (input.classList.contains('is-invalid')) visible.classList.add('is-invalid');
         });
-        // A form's "Clear"/reset button must also empty the visible dd/mm/yyyy boxes.
+        /*
+         * Searchable dropdowns: every <select data-searchable> (filters and long form lists) gets Tom Select.
+         * Click it and type: the list narrows while typing (e.g. "sal" → Sales). The real <select> stays in the
+         * form and keeps its value, name and "change" events, so the filters, the forms and the server see no difference.
+         */
+        document.querySelectorAll('select[data-searchable]').forEach(select => {
+            if (typeof TomSelect === 'undefined') return; // CDN not reachable: the normal dropdown still works
+            new TomSelect(select, {
+                // one choice: a search box at the top of the open list;
+                // several (<select multiple>, e.g. a user's roles): each choice is a chip with an ✕, type to search
+                plugins: select.multiple ? ['remove_button'] : ['dropdown_input'],
+                allowEmptyOption: !select.multiple, // the first, empty option ("Select department") = no choice / all
+                closeAfterSelect: !select.multiple, // keep the list open to pick several
+                hidePlaceholder: select.multiple,
+                placeholder: select.dataset.placeholder,
+                maxOptions: null,              // show every option, not only the first 50
+                create: false,
+                render: { no_results: () => '<div class="no-results">No match</div>' },
+            });
+            if (select.classList.contains('is-invalid')) select.tomselect.wrapper.classList.add('is-invalid');
+        });
+        // A form's "Clear"/reset button must also empty the visible dd/mm/yyyy boxes and reset the searchable dropdowns.
         document.addEventListener('reset', event => setTimeout(() => {
             event.target.querySelectorAll('input').forEach(input => input._flatpickr?.setDate(input.value || null, false));
+            event.target.querySelectorAll('select').forEach(select => select.tomselect?.setValue(select.value, true));
         }));
 
         // Password checklist under a new-password field (partials/password-rules): the same rules as the server.

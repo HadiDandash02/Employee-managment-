@@ -63,7 +63,7 @@ class AdminUserTest extends TestCase
             'role' => 'superuser',
             'password' => 'short',
             'password_confirmation' => 'different',
-        ])->assertSessionHasErrors(['name', 'username', 'email', 'role', 'password']);
+        ])->assertSessionHasErrors(['name', 'username', 'email', 'roles.0', 'password']); // roles.0: "superuser" is not a role
     }
 
     public function test_admin_can_update_a_user_and_keep_the_password(): void
@@ -91,8 +91,8 @@ class AdminUserTest extends TestCase
             'name' => $this->admin->name,
             'username' => $this->admin->username,
             'email' => $this->admin->email,
-            'role' => 'viewer',
-        ])->assertSessionHasErrors('role');
+            'roles' => ['manager'],
+        ])->assertSessionHasErrors(['roles' => 'You cannot change your own roles.']);
 
         $this->assertSame('admin', $this->admin->fresh()->role);
     }
@@ -201,7 +201,7 @@ class AdminUserTest extends TestCase
             'role' => 'admin',
             'password' => 'Passw0rd!2026',
             'password_confirmation' => 'Passw0rd!2026',
-        ])->assertSessionHasErrors('role');
+        ])->assertSessionHasErrors(['roles.0' => 'You may not give one of these roles.']);
 
         $this->assertDatabaseMissing('users', ['username' => 'sneaky']);
     }

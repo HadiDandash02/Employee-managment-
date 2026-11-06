@@ -68,7 +68,7 @@
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label for="branch_id" class="form-label">Branch <span class="text-danger">*</span></label>
-                        <select id="branch_id" name="branch_id" required class="form-select select-divider @error('branch_id') is-invalid @enderror">
+                        <select data-searchable id="branch_id" name="branch_id" required class="form-select select-divider @error('branch_id') is-invalid @enderror">
                             <option value="">Choose a branch</option>
                             @foreach ($branches->groupBy(fn ($branch) => $branch->company?->name ?? 'No company') as $company => $group)
                                 <optgroup label="{{ $company }}">

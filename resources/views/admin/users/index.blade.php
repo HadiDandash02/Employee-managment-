@@ -32,7 +32,7 @@
                     </div>
                     <div class="col-md-6 col-lg-4">
                         <label for="f-role" class="form-label">Select role</label>
-                        <select id="f-role" name="role" class="form-select select-divider">
+                        <select data-searchable id="f-role" name="role" class="form-select select-divider">
                             <option value="">Select role</option>
                             @foreach ($roles as $key => $role)
                                 <option value="{{ $key }}">{{ $role['label'] }}</option>
@@ -150,8 +150,10 @@
             },
             {
                 data: 'role', name: 'role',
-                render: (role, type, row) =>
-                    `<span class="role-badge role-${esc(row.role)}">${esc(row.role_label)}</span>`,
+                // every role of the user (e.g. Manager + Employee), highest first
+                render: (role, type, row) => `<div class="d-flex flex-wrap gap-1">${
+                    row.roles.map(r => `<span class="role-badge role-${esc(r.key)}">${esc(r.label)}</span>`).join('')
+                }</div>`,
             },
             {
                 data: null, orderable: false, searchable: false,

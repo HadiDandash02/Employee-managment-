@@ -13,38 +13,40 @@
                     <div class="small text-muted">Who this person is and how they log in.</div>
                 </div>
             </div>
+            {{-- Each field: label, one clean box with its icon inside (.field-icon, layouts/app.blade.php), a short hint --}}
             <div class="panel-body">
-                <div class="row g-3">
-                    <div class="col-md-6">
+                <div class="row g-4">
+                    <div class="col-md-6 col-xxl-4">
                         <label for="name" class="form-label">Full name <span class="text-danger">*</span></label>
-                        <div class="input-group has-validation">
-                            <span class="input-group-text"><i class="bi bi-person"></i></span>
-                            <input type="text" id="name" name="name" value="{{ old('name', $user->name) }}" maxlength="255" required
+                        <div class="field-icon">
+                            <i class="bi bi-person"></i>
+                            <input type="text" id="name" name="name" value="{{ old('name', $user->name) }}" maxlength="255" required autocomplete="name"
                                    class="form-control @error('name') is-invalid @enderror" placeholder="e.g. Sara Haddad">
                             @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
+                        <div class="form-text">As it appears in the app.</div>
                     </div>
 
-                    <div class="col-md-6">
+                    <div class="col-md-6 col-xxl-4">
                         <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
-                        <div class="input-group has-validation">
-                            <span class="input-group-text">@</span>
-                            <input type="text" id="username" name="username" value="{{ old('username', $user->username) }}" maxlength="50" required
-                                   class="form-control @error('username') is-invalid @enderror" autocomplete="off" placeholder="e.g. sara.haddad">
+                        <div class="field-icon">
+                            <i class="bi bi-at"></i>
+                            <input type="text" id="username" name="username" value="{{ old('username', $user->username) }}" maxlength="50" required autocomplete="off"
+                                   class="form-control @error('username') is-invalid @enderror" placeholder="e.g. sara.haddad">
                             @error('username') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
-                        <div class="form-text">Letters, numbers, dots, dashes and underscores. Used to log in.</div>
+                        <div class="form-text">Used to log in · letters, numbers, . - _</div>
                     </div>
 
-                    <div class="col-md-6">
+                    <div class="col-md-12 col-xxl-4">
                         <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
-                        <div class="input-group has-validation">
-                            <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                            <input type="email" id="email" name="email" value="{{ old('email', $user->email) }}" maxlength="255" required
+                        <div class="field-icon">
+                            <i class="bi bi-envelope"></i>
+                            <input type="email" id="email" name="email" value="{{ old('email', $user->email) }}" maxlength="255" required autocomplete="email"
                                    class="form-control @error('email') is-invalid @enderror" placeholder="name@company.com">
                             @error('email') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
-                        <div class="form-text">Can also be used to log in instead of the username.</div>
+                        <div class="form-text">Also works to log in.</div>
                     </div>
                 </div>
             </div>
@@ -62,13 +64,18 @@
             <div class="panel-body">
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label for="role" class="form-label">Role <span class="text-danger">*</span></label>
-                        <select id="role" name="role" class="form-select select-divider @error('role') is-invalid @enderror" required>
+                        {{-- One or more roles (users.roles). The highest one is the main role: it decides the URL and the dashboard. --}}
+                        @php($chosenRoles = old('roles', $user->allRoles()))
+                        @php($rolesError = $errors->first('roles') ?: $errors->first('roles.*'))
+                        <label for="role" class="form-label">Roles <span class="text-danger">*</span></label>
+                        <select data-searchable id="role" name="roles[]" multiple required
+                                class="form-select {{ $rolesError ? 'is-invalid' : '' }}" data-placeholder="Choose one or more roles">
                             @foreach ($roles as $key => $role)
-                                <option value="{{ $key }}" @selected(old('role', $user->role) === $key)>{{ $role['label'] }}</option>
+                                <option value="{{ $key }}" @selected(in_array($key, (array) $chosenRoles, true))>{{ $role['label'] }}</option>
                             @endforeach
                         </select>
-                        @error('role') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        @if ($rolesError) <div class="invalid-feedback d-block">{{ $rolesError }}</div> @endif
+                        <div class="form-text">Pick one or more, e.g. Employee + Manager. The highest role decides the main area (URL and dashboard).</div>
                         <div class="role-hint mt-2" id="role-description"></div>
                     </div>
 
@@ -77,7 +84,7 @@
                         <label for="employee_id" class="form-label">
                             Linked employee <span class="text-danger" id="employee-required">*</span>
                         </label>
-                        <select id="employee_id" name="employee_id" class="form-select select-divider @error('employee_id') is-invalid @enderror">
+                        <select data-searchable id="employee_id" name="employee_id" class="form-select select-divider @error('employee_id') is-invalid @enderror">
                             <option value="">Not linked</option>
                             @foreach ($employees ?? [] as $employee)
                                 <option value="{{ $employee->id }}" @selected((string) old('employee_id', $user->employee_id) === (string) $employee->id)>
@@ -125,10 +132,10 @@
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label for="password" class="form-label">{{ $user->exists ? 'New password' : 'Password' }} @unless ($user->exists)<span class="text-danger">*</span>@endunless</label>
-                        <div class="input-group has-validation">
-                            <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                        <div class="field-icon">
+                            <i class="bi bi-lock"></i>
                             <input type="password" id="password" name="password" autocomplete="new-password" @required(! $user->exists)
-                                   class="form-control border-end-0 @error('password') is-invalid @enderror" placeholder="Strong password">
+                                   class="form-control has-toggle @error('password') is-invalid @enderror" placeholder="Strong password">
                             <button type="button" class="btn password-toggle" data-password-toggle="password" aria-label="Show password" aria-pressed="false">
                                 <i class="bi bi-eye"></i>
                             </button>
@@ -138,10 +145,10 @@
                     </div>
                     <div class="col-md-6">
                         <label for="password_confirmation" class="form-label">Confirm password @unless ($user->exists)<span class="text-danger">*</span>@endunless</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                        <div class="field-icon">
+                            <i class="bi bi-shield-lock"></i>
                             <input type="password" id="password_confirmation" name="password_confirmation" autocomplete="new-password" @required(! $user->exists)
-                                   class="form-control border-end-0" placeholder="Type it again">
+                                   class="form-control has-toggle" placeholder="Type it again">
                             <button type="button" class="btn password-toggle" data-password-toggle="password_confirmation" aria-label="Show password" aria-pressed="false">
                                 <i class="bi bi-eye"></i>
                             </button>
@@ -220,14 +227,22 @@
 
     (() => {
         const role = document.getElementById('role');
-        // What each role may do, shown under the role list.
-        const descriptions = @json(collect($roles)->map(fn ($r) => $r['description']));
+        // What each role may do, shown under the role list: one line per chosen role.
+        const roles = @json(collect($roles)->map(fn ($r) => ['label' => $r['label'], 'description' => $r['description']]));
 
         const sync = () => {
-            document.getElementById('role-description').textContent = descriptions[role.value] ?? '';
+            const chosen = [...role.selectedOptions].map(option => option.value);
+            const box = document.getElementById('role-description');
+            box.replaceChildren(...chosen.filter(key => roles[key]).map(key => {
+                const line = document.createElement('div');
+                line.innerHTML = '<strong></strong> <span></span>';
+                line.querySelector('strong').textContent = roles[key].label + ':';
+                line.querySelector('span').textContent = roles[key].description;
+                return line;
+            }));
 
-            // "Linked employee" is required only for the Employee role.
-            const isEmployee = role.value === 'employee';
+            // "Linked employee" is required when Employee is one of the roles.
+            const isEmployee = chosen.includes('employee');
             document.getElementById('employee_id').required = isEmployee;
             document.getElementById('employee-required').classList.toggle('d-none', !isEmployee);
             document.getElementById('employee-hint').textContent = isEmployee

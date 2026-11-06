@@ -17,11 +17,14 @@ class LeaveRequestFactory extends Factory
     /**
      * Full days by default; "days" is counted from the dates unless given.
      *
+     * The dates stay inside the CURRENT year: a leave in next year only has the 3 base days earned so far,
+     * so approving it in a test would fail on the balance rule (late in the year that happened at random).
+     *
      * @return array<string, mixed>
      */
     public function definition(): array
     {
-        $start = fake()->dateTimeBetween('+1 week', '+2 months');
+        $start = fake()->dateTimeBetween(now()->startOfYear(), now()->endOfYear()->subDays(7));
 
         return [
             'employee_id' => Employee::factory(),

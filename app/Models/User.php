@@ -28,9 +28,54 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'roles',
         'employee_id',
         'is_active',
     ];
+
+    /**
+     * A user can have several roles (users.roles, e.g. ["manager", "employee"]).
+     * users.role is the MAIN role: the highest of them (Admin > HR > Manager > Employee, the order in
+     * config/permissions.php). It decides the URL prefix (/manager/...) and the dashboard.
+     * Kept in sync here, so code that only sets "role" (factories, seeders) still works.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (User $user) {
+            if ($user->isDirty('roles') && $user->roles) {
+                $user->roles = self::sortRoles($user->roles);
+                $user->role = $user->roles[0];
+            } elseif ($user->isDirty('role') || ! $user->roles) {
+                $user->roles = [$user->role];
+            }
+        });
+    }
+
+    /**
+     * Role keys in the order of config/permissions.php (highest first), without duplicates or unknown roles.
+     *
+     * @param  array<int, string>  $roles
+     * @return list<string>
+     */
+    public static function sortRoles(array $roles): array
+    {
+        return array_values(array_intersect(array_keys(config('permissions.roles', [])), $roles));
+    }
+
+    /**
+     * Every role of this user, highest first.
+     *
+     * @return list<string>
+     */
+    public function allRoles(): array
+    {
+        return self::sortRoles($this->roles ?: [$this->role]) ?: [$this->role];
+    }
+
+    public function hasRole(string $role): bool
+    {
+        return in_array($role, $this->allRoles(), true);
+    }
 
     /**
      * The attributes that should be hidden for serialization.
@@ -53,6 +98,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'roles' => 'array',
         ];
     }
 
@@ -83,8 +129,9 @@ class User extends Authenticatable
                     ->orWhere('users.email', 'like', $like)
                     ->orWhereHas('employee', fn (Builder $e) => $e->where('first_name', 'like', $like)->orWhere('last_name', 'like', $like));
 
-                if ($matchingRoles) {
-                    $q->orWhereIn('users.role', $matchingRoles);
+                // any of the user's roles, not only the main one
+                foreach ($matchingRoles as $role) {
+                    $q->orWhere('users.roles', 'like', '%"'.$role.'"%');
                 }
 
                 if (ctype_digit($word)) {
@@ -102,28 +149,35 @@ class User extends Authenticatable
 
     public function isAdmin(): bool
     {
-        return $this->role === 'admin';
+        return $this->hasRole('admin');
     }
 
     /**
-     * Whether this user's role grants the given permission (see config/permissions.php).
+     * Whether ANY of this user's roles grants the given permission (see config/permissions.php):
+     * an Employee + Manager has the permissions of both.
      */
     public function hasPermission(string $permission): bool
     {
-        $granted = config("permissions.roles.{$this->role}.permissions", []);
+        foreach ($this->allRoles() as $role) {
+            $granted = config("permissions.roles.{$role}.permissions", []);
 
-        return in_array('*', $granted, true) || in_array($permission, $granted, true);
+            if (in_array('*', $granted, true) || in_array($permission, $granted, true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
-     * Role keys whose accounts this user may see and manage (config "manages").
+     * Role keys whose accounts this user may see and manage (config "manages" of all their roles).
      *
      * @return list<string>
      */
     public function manageableRoles(): array
     {
         $allRoles = array_keys(config('permissions.roles', []));
-        $manages = config("permissions.roles.{$this->role}.manages", []);
+        $manages = collect($this->allRoles())->flatMap(fn (string $role) => config("permissions.roles.{$role}.manages", []))->all();
 
         return in_array('*', $manages, true) ? $allRoles : array_values(array_intersect($allRoles, $manages));
     }
@@ -138,7 +192,9 @@ class User extends Authenticatable
      */
     public function canManageUser(User $other): bool
     {
-        return $this->hasPermission('users.manage') && $this->canManageRole($other->role);
+        // every role of the other account must be one this user manages (HR never manages anyone who is also Admin)
+        return $this->hasPermission('users.manage')
+            && collect($other->allRoles())->every(fn (string $role) => $this->canManageRole($role));
     }
 
     /**
@@ -195,6 +251,16 @@ class User extends Authenticatable
     public function getRoleLabelAttribute(): string
     {
         return config("permissions.roles.{$this->role}.label", ucfirst((string) $this->role));
+    }
+
+    /**
+     * Labels of all roles, highest first: ['Manager', 'Employee'].
+     *
+     * @return list<string>
+     */
+    public function getRoleLabelsAttribute(): array
+    {
+        return array_map(fn (string $role) => config("permissions.roles.{$role}.label", ucfirst($role)), $this->allRoles());
     }
 
     public function getInitialsAttribute(): string

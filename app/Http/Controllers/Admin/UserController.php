@@ -56,7 +56,8 @@ class UserController extends Controller
         $base = User::with('employee')->whereIn('role', $visibleRoles);
         $query = (clone $base)
             ->when($name !== '', fn ($q) => $matches($q, $name))
-            ->when($role !== '', fn ($q) => $q->where('role', $role)) // combined with whereIn above: a hidden role gives no rows
+            // any of the user's roles (users.roles), combined with whereIn above: a hidden role gives no rows
+            ->when($role !== '', fn ($q) => $q->where('roles', 'like', '%"'.addcslashes($role, '%_\\').'"%'))
             ->search($search);
 
         $column = data_get($request->query('columns'), (int) data_get($request->query('order'), '0.column', -1));
@@ -82,6 +83,8 @@ class UserController extends Controller
                 'role' => $user->role,
                 'role_label' => $user->role_label,
                 'role_color' => $user->role_color,
+                // every role, highest first: [{key: "manager", label: "Manager"}, {key: "employee", …}]
+                'roles' => array_map(fn (string $key, string $label) => ['key' => $key, 'label' => $label], $user->allRoles(), $user->role_labels),
                 'created_at' => $user->created_at?->format('d/m/Y'),
                 'employee' => $user->employee?->full_name,
                 'employee_url' => $user->employee && $actor->can('employees.view') ? route('employees.show', $user->employee) : null,
@@ -134,12 +137,13 @@ class UserController extends Controller
             throw ValidationException::withMessages(['is_active' => 'You cannot suspend your own account.']);
         }
 
-        if ($data['role'] !== $user->role) {
+        if ($data['roles'] !== $user->allRoles()) {
             if ($user->is($request->user())) {
-                throw ValidationException::withMessages(['role' => 'You cannot change your own role.']);
+                throw ValidationException::withMessages(['roles' => 'You cannot change your own roles.']);
             }
-            if ($user->isAdmin()) {
-                $this->ensureAnotherAdminExists($user, 'role');
+            // removing the Admin role from the last admin would leave nobody to manage everything
+            if ($user->isAdmin() && ! in_array('admin', $data['roles'], true)) {
+                $this->ensureAnotherAdminExists($user, 'roles');
             }
         }
 
@@ -194,25 +198,41 @@ class UserController extends Controller
         return array_intersect_key(config('permissions.roles'), array_flip($actor->manageableRoles()));
     }
 
+    /**
+     * A user can have several roles: the form sends roles[] (a single "role" is accepted too).
+     * The saved list is sorted highest first; the User model makes the first one the main role (users.role).
+     */
     private function validated(Request $request, ?User $user = null): array
     {
-        return $request->validate([
+        if (! $request->has('roles') && $request->filled('role')) {
+            $request->merge(['roles' => [$request->input('role')]]);
+        }
+
+        $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:50', 'regex:/^[A-Za-z0-9._-]+$/', Rule::unique('users', 'username')->ignore($user)],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user)],
-            'role' => ['required', Rule::in($request->user()->manageableRoles())],
+            'roles' => ['required', 'array', 'min:1'],
+            // only roles this person may give (HR cannot give "Admin")
+            'roles.*' => ['string', 'distinct', Rule::in($request->user()->manageableRoles())],
             'password' => [$user ? 'nullable' : 'required', 'confirmed', Password::defaults()],
             'is_active' => ['sometimes', 'boolean'],
-            // The employee record this login belongs to: required for the Employee role, one login per employee.
+            // The employee record this login belongs to: required when Employee is one of the roles, one login per employee.
             'employee_id' => [
-                Rule::requiredIf($request->input('role') === 'employee'), 'nullable', 'integer',
+                Rule::requiredIf(in_array('employee', (array) $request->input('roles', []), true)), 'nullable', 'integer',
                 'exists:employees,id', Rule::unique('users', 'employee_id')->ignore($user),
             ],
         ], [
+            'roles.required' => 'Please choose at least one role.',
+            'roles.*.in' => 'You may not give one of these roles.',
             'employee_id.required' => 'Please choose the employee this login belongs to.',
             'employee_id.unique' => 'This employee already has a login.',
             'employee_id.exists' => 'The selected employee does not exist.',
         ]);
+
+        $data['roles'] = User::sortRoles($data['roles']);
+
+        return $data;
     }
 
     /**
